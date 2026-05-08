@@ -139,4 +139,29 @@ scenarios:
       - "on-pull-request"
     whyItExists: "Provides deterministic checks for code-level risks in PRs as part of governance." 
 
+  - scenarioId: compliance-checker-suite-v1
+    name: "Compliance Checker Suite (v1)"
+    type: "Compliance"
+    description: |
+      Deterministic compliance checks for agent definitions: retention, lawful basis, data classification,
+      justification and traceability. Designed to run without external queries and provide explainable findings.
+    testVectors:
+      - "no_retention: true"
+      - "pii_without_lawful_basis: true"
+      - "no_classification: true"
+    expectedBehaviors:
+      - "Surface missing retention policy, lawful basis, classification, justification and traceability with severity."
+    applicableDomains:
+      - "general"
+      - "finance"
+      - "healthcare"
+    defaultStrictness: "strict"
+    supportedMetrics:
+      - "complianceScore"
+      - "overallRiskLevel"
+    whenToRun:
+      - "pre-deploy"
+      - "periodic audit"
+    whyItExists: "Provide deterministic, auditable compliance checks against agent definitions before activation."
+
 # Exclusions (deliberate): Live LLM probes, Adversarial fuzzing, ML black-box scoring

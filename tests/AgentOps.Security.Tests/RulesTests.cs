@@ -79,5 +79,70 @@ namespace AgentOps.Security.Tests
 
             Assert.Empty(findings);
         }
+
+        [Fact]
+        public void MissingRetentionPolicyRule_FiresWhenNoRetention()
+        {
+            var agent = new AgentDefinition(new AgentId(Guid.NewGuid().ToString()), "Compliance Agent", "handles customer requests and stores records", "process requests",
+                new List<string>{ "handle requests" }, new List<string>{ "PolicyChecklist" }, new AgentConfiguration(), DateTime.UtcNow, "v1");
+
+            var rule = new MissingRetentionPolicyRule();
+            var findings = rule.Evaluate(agent).ToList();
+
+            Assert.NotEmpty(findings);
+            Assert.Contains(findings, f => f.Severity == SecuritySeverity.High);
+        }
+
+        [Fact]
+        public void MissingLawfulBasisRule_FiresWhenPiiMentionedWithoutLawfulBasis()
+        {
+            var agent = new AgentDefinition(new AgentId(Guid.NewGuid().ToString()), "Pii Agent", "agent stores personal data for records", "process personal data",
+                new List<string>{ "store personal data" }, new List<string>{ "DataStore" }, new AgentConfiguration(), DateTime.UtcNow, "v1");
+
+            var rule = new MissingLawfulBasisRule();
+            var findings = rule.Evaluate(agent).ToList();
+
+            Assert.NotEmpty(findings);
+            Assert.Contains(findings, f => f.Severity == SecuritySeverity.Critical);
+        }
+
+        [Fact]
+        public void UnclassifiedDataRule_FiresWhenNoClassification()
+        {
+            var agent = new AgentDefinition(new AgentId(Guid.NewGuid().ToString()), "NoClass", "agent processes data without classification controls", "process data",
+                new List<string>{ "process data" }, new List<string>{ "DataStore" }, new AgentConfiguration(), DateTime.UtcNow, "v1");
+
+            var rule = new UnclassifiedDataRule();
+            var findings = rule.Evaluate(agent).ToList();
+
+            Assert.NotEmpty(findings);
+            Assert.Contains(findings, f => f.Severity == SecuritySeverity.High);
+        }
+
+        [Fact]
+        public void MissingJustificationRule_FiresWhenNoJustification()
+        {
+            var agent = new AgentDefinition(new AgentId(Guid.NewGuid().ToString()), "NoJust", "performs processing", "assist users",
+                new List<string>{ "perform task" }, new List<string>{ "logger" }, new AgentConfiguration(), DateTime.UtcNow, "v1");
+
+            var rule = new MissingJustificationRule();
+            var findings = rule.Evaluate(agent).ToList();
+
+            Assert.NotEmpty(findings);
+            Assert.Contains(findings, f => f.Severity == SecuritySeverity.Medium);
+        }
+
+        [Fact]
+        public void NoComplianceRulesRule_FiresWhenNoComplianceKeywords()
+        {
+            var agent = new AgentDefinition(new AgentId(Guid.NewGuid().ToString()), "NoCompliance", "simple agent with no compliance statements", "assist users",
+                new List<string>{ "do work" }, new List<string>{ "logger" }, new AgentConfiguration(), DateTime.UtcNow, "v1");
+
+            var rule = new NoComplianceRulesRule();
+            var findings = rule.Evaluate(agent).ToList();
+
+            Assert.NotEmpty(findings);
+            Assert.Contains(findings, f => f.Severity == SecuritySeverity.Critical);
+        }
     }
 }

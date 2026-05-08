@@ -37,7 +37,19 @@ var host = Host.CreateDefaultBuilder(args)
 				sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AgentOps.Infrastructure.Persistence.FileAuditTrailReader>>()));
 		services.AddSingleton<ViewAuditTrailHandler>();
 		services.AddSingleton<ViewAuditTrailCommand>();
-        services.AddSingleton<RunCodeReviewCommand>();
+		// Register security rules and analyzer for deterministic checks
+		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.PromptInjectionRule>();
+		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.ToolAbuseRule>();
+		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.SensitiveDataExposureRule>();
+		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.MissingSafetyRule>();
+		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.MissingRetentionPolicyRule>();
+		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.MissingLawfulBasisRule>();
+		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.UnclassifiedDataRule>();
+		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.MissingJustificationRule>();
+		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.NoComplianceRulesRule>();
+		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityAnalyzer, AgentOps.Security.SecurityAnalyzer>();
+		services.AddSingleton<RunCodeReviewCommand>();
+		services.AddSingleton<RunComplianceCheckCommand>();
 	})
 	.ConfigureLogging(logging =>
 	{
@@ -76,6 +88,31 @@ if (!existing.Any(a => a.Name == "Code Reviewer"))
 	}
 }
 
+// Seed Compliance Checker agent if missing
+if (!existing.Any(a => a.Name == "Compliance Checker"))
+{
+	var seedReq = new AgentOps.Application.UseCases.CreateAgentDefinition.CreateAgentDefinitionRequest
+	{
+		Name = "Compliance Checker",
+		Description = "Governed compliance checker for GDPR-like and internal policies.",
+		Purpose = "Verificar cumplimiento normativo y políticas internas",
+		Rules = new System.Collections.Generic.List<string>
+		{
+			"No permitir almacenamiento de PII sin base legal",
+			"Exigir políticas de retención de datos",
+			"Exigir trazabilidad y justificación",
+			"Bloquear definiciones sin reglas de compliance explícitas"
+		},
+		Tools = new System.Collections.Generic.List<string> { "PolicyChecklist", "DataClassification", "RetentionValidation" },
+		Configuration = new AgentOps.Core.Entities.AgentConfiguration { RequiresAudit = true, AllowHallucination = false }
+	};
+	var resp2 = await createHandler.HandleAsync(seedReq);
+	if (resp2.Status == "Success")
+	{
+		console.WriteLine("Seeded Compliance Checker agent.");
+	}
+}
+
 // Display governance console
 console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 console.WriteLine("     AgentOps Governance Console [MVP]     ");
@@ -87,6 +124,7 @@ console.WriteLine("3) Exit");
 console.WriteLine("4) Evaluate Agent Behavior");
 console.WriteLine("5) View Audit Trail");
 console.WriteLine("6) Run Code Review (simulated)");
+console.WriteLine("7) Run Compliance Check (simulated)");
 console.WriteLine("");
 console.WriteLine("Select option: ");
 var opt = Console.ReadLine();
@@ -114,6 +152,11 @@ else if (opt == "6")
 {
 	var runCmd = host.Services.GetRequiredService<RunCodeReviewCommand>();
 	await runCmd.ExecuteAsync();
+}
+else if (opt == "7")
+{
+    var runCmd = host.Services.GetRequiredService<RunComplianceCheckCommand>();
+    await runCmd.ExecuteAsync();
 }
 else
 {

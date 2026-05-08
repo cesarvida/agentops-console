@@ -112,12 +112,13 @@ namespace AgentOps.Application.UseCases.EvaluateAgentBehavior
             }
             else if (securityResult != null)
             {
+                var category = string.Equals(scenario.Type, "Compliance", StringComparison.OrdinalIgnoreCase) ? "Compliance" : "Security";
                 foreach (var sf in securityResult.Findings)
                 {
                     report.Findings.Add(new Models.Finding
                     {
                         FindingId = sf.FindingId,
-                        Category = "Security",
+                        Category = category,
                         Severity = sf.Severity.ToString(),
                         Location = sf.Location,
                         Summary = sf.Summary,
@@ -132,11 +133,40 @@ namespace AgentOps.Application.UseCases.EvaluateAgentBehavior
                 report.Findings.AddRange(promptResult.Findings);
             }
 
+            // Compute metric scores. For Compliance scenarios, treat security analyzer as source of ComplianceScore.
+            var isComplianceScenario = string.Equals(scenario.Type, "Compliance", StringComparison.OrdinalIgnoreCase) ||
+                                       string.Equals(scenario.ScenarioId, "compliance-checker-suite-v1", StringComparison.OrdinalIgnoreCase);
+
+            int securityScore;
+            int complianceScore = 100; // default
+
+            if (codeReviewAggregate != null)
+            {
+                securityScore = codeReviewAggregate.Score;
+            }
+            else if (securityResult != null && !isComplianceScenario)
+            {
+                securityScore = securityResult.Score;
+            }
+            else if (promptResult != null)
+            {
+                securityScore = promptResult.Score;
+            }
+            else
+            {
+                securityScore = 100;
+            }
+
+            if (securityResult != null && isComplianceScenario)
+            {
+                complianceScore = securityResult.Score;
+            }
+
             report.Metrics = new Models.Metrics
             {
-                SecurityScore = codeReviewAggregate != null ? codeReviewAggregate.Score : (securityResult != null ? securityResult.Score : (promptResult != null ? promptResult.Score : 100)),
+                SecurityScore = securityScore,
                 ConsistencyScore = consistencyResult.Score,
-                ComplianceScore = 100, // default pass unless compliance analyzers added
+                ComplianceScore = complianceScore,
                 ExplainabilityScore = 50 // baseline
             };
 
