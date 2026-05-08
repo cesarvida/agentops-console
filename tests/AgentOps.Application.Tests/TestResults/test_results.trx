@@ -1,0 +1,124 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="e58178ed-b140-4089-9664-a167e9eea626" name="cvida@EUITRLP8875 2026-05-08 12:17:41" runUser="INTRANET\cvida" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-05-08T12:17:41.2703636+02:00" queuing="2026-05-08T12:17:41.2703645+02:00" start="2026-05-08T12:17:37.6514059+02:00" finish="2026-05-08T12:17:41.7089240+02:00" />
+  <TestSettings name="default" id="3b7a0001-625c-4b1a-b519-1b60e794ef3c">
+    <Deployment runDeploymentRoot="cvida_EUITRLP8875_2026-05-08_12_17_41" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="e573b929-a511-4c29-b590-203158de8415" testId="fcbc6d46-68d2-34ad-635e-3676214e82f6" testName="AgentOps.Application.Tests.ViewAuditTrailHandlerTests.Handle_HasMore_WhenMoreThanPageSize" computerName="EUITRLP8875" duration="00:00:00.0059108" startTime="2026-05-08T12:17:41.2429892+02:00" endTime="2026-05-08T12:17:41.2430861+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e573b929-a511-4c29-b590-203158de8415" />
+    <UnitTestResult executionId="095ab130-ec75-45cc-8f1f-1e45f7088f29" testId="477a8062-9258-9cf5-30b5-94dadf7c3e48" testName="AgentOps.Application.Tests.ViewAuditTrailHandlerTests.Handle_EmptyLog_ReturnsEmptyResponse" computerName="EUITRLP8875" duration="00:00:00.0026690" startTime="2026-05-08T12:17:41.2257459+02:00" endTime="2026-05-08T12:17:41.2269716+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="095ab130-ec75-45cc-8f1f-1e45f7088f29" />
+    <UnitTestResult executionId="8c63948e-67e7-46be-b96a-336ec43c9308" testId="309773ce-0cc0-a5d8-dc2d-7d045c820c08" testName="AgentOps.Application.Tests.CodeReviewerIntegrationTests.Evaluate_CodeReviewer_WithSecret_Fails" computerName="EUITRLP8875" duration="00:00:00.6214056" startTime="2026-05-08T12:17:40.9710604+02:00" endTime="2026-05-08T12:17:41.5595508+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8c63948e-67e7-46be-b96a-336ec43c9308" />
+    <UnitTestResult executionId="d30cdf19-6842-4aa4-a902-86bf06936e9f" testId="d5532d3e-ae05-e487-7035-f3cdd38d1f75" testName="AgentOps.Application.Tests.CodeReviewerAnalyzersTests.DependencyRiskAnalyzer_FindsKnownVuln" computerName="EUITRLP8875" duration="00:00:00.0016625" startTime="2026-05-08T12:17:41.2247720+02:00" endTime="2026-05-08T12:17:41.2249306+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d30cdf19-6842-4aa4-a902-86bf06936e9f" />
+    <UnitTestResult executionId="969f5519-82ff-4c2d-bbad-8721e0588c0b" testId="102b0801-a717-c841-f69f-1b23b0dae55d" testName="AgentOps.Application.Tests.EvaluateAgentBehaviorHandlerTests.Handle_CriticalFinding_ReturnsFail" computerName="EUITRLP8875" duration="00:00:00.6214041" startTime="2026-05-08T12:17:40.9710802+02:00" endTime="2026-05-08T12:17:41.5596512+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="969f5519-82ff-4c2d-bbad-8721e0588c0b" />
+    <UnitTestResult executionId="b0067ed6-b62d-49c0-a1bf-0e129b98ad35" testId="d1e367a6-f6b1-e72a-b9a0-50d532111c3e" testName="AgentOps.Application.Tests.ViewAuditTrailHandlerTests.Handle_FromGreaterThanTo_Throws" computerName="EUITRLP8875" duration="00:00:00.0011025" startTime="2026-05-08T12:17:41.2435045+02:00" endTime="2026-05-08T12:17:41.2435747+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b0067ed6-b62d-49c0-a1bf-0e129b98ad35" />
+    <UnitTestResult executionId="050a9a22-9916-490b-b938-c56d16c0288a" testId="99626b9e-8847-c50c-1ce5-c36e0c995ece" testName="AgentOps.Application.Tests.CreateAgentDefinitionHandlerTests.Handler_Success_Calls_Repos" computerName="EUITRLP8875" duration="00:00:00.0251654" startTime="2026-05-08T12:17:41.5910477+02:00" endTime="2026-05-08T12:17:41.6122082+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="050a9a22-9916-490b-b938-c56d16c0288a" />
+    <UnitTestResult executionId="d8219896-022f-4898-8b8b-4b3ac8ff0888" testId="f2b4b6c9-36fe-8570-8cd3-85cc767735f9" testName="AgentOps.Application.Tests.CodeReviewerAnalyzersTests.DangerousFunctionAnalyzer_FindsEval" computerName="EUITRLP8875" duration="00:00:00.0013599" startTime="2026-05-08T12:17:41.2252223+02:00" endTime="2026-05-08T12:17:41.2253230+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d8219896-022f-4898-8b8b-4b3ac8ff0888" />
+    <UnitTestResult executionId="cef64344-dcee-453a-8a4a-ca02bd488e19" testId="86b0c25c-c6e3-5cfe-aa12-8e0c7f78c0e9" testName="AgentOps.Application.Tests.CodeReviewerAnalyzersTests.SecretPatternAnalyzer_FindsApiKey" computerName="EUITRLP8875" duration="00:00:00.2792490" startTime="2026-05-08T12:17:40.9709051+02:00" endTime="2026-05-08T12:17:41.2213340+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cef64344-dcee-453a-8a4a-ca02bd488e19" />
+    <UnitTestResult executionId="12282074-253a-41da-8962-f5530e8c87d3" testId="bd27bfd4-ca73-e0a7-746b-8f9aa5bb22a7" testName="AgentOps.Application.Tests.SecurityIntegrationTests.EvaluateAgentBehavior_WithCriticalSecurityFinding_ResultsInFail" computerName="EUITRLP8875" duration="00:00:00.6213758" startTime="2026-05-08T12:17:40.9710064+02:00" endTime="2026-05-08T12:17:41.5597476+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="12282074-253a-41da-8962-f5530e8c87d3" />
+    <UnitTestResult executionId="667c8a58-a255-4788-aff6-83c65b237f96" testId="f762e4b4-2a1c-1f10-a90f-1e71f6740710" testName="AgentOps.Application.Tests.CreateAgentDefinitionHandlerTests.Handler_Fail_InvalidInput_DoesNotPersist" computerName="EUITRLP8875" duration="00:00:00.6545604" startTime="2026-05-08T12:17:40.9678683+02:00" endTime="2026-05-08T12:17:41.5869039+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="667c8a58-a255-4788-aff6-83c65b237f96" />
+    <UnitTestResult executionId="71dd3985-c8c2-443f-aa02-d79c3f0a713a" testId="2d29d234-67ed-dc87-cb75-7249f5ecede2" testName="AgentOps.Application.Tests.ViewAuditTrailHandlerTests.Handle_InvalidPageSize_Throws" computerName="EUITRLP8875" duration="00:00:00.0187676" startTime="2026-05-08T12:17:41.2211460+02:00" endTime="2026-05-08T12:17:41.2255053+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="71dd3985-c8c2-443f-aa02-d79c3f0a713a" />
+    <UnitTestResult executionId="a0c65737-aa30-4355-b977-9539dda97104" testId="06da2712-3900-0268-237d-a3b23487a4f4" testName="AgentOps.Application.Tests.ViewAuditTrailHandlerTests.Handle_NoFilter_ReturnsAllUpToPageSize" computerName="EUITRLP8875" duration="00:00:00.2522062" startTime="2026-05-08T12:17:40.9710349+02:00" endTime="2026-05-08T12:17:41.1978218+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a0c65737-aa30-4355-b977-9539dda97104" />
+    <UnitTestResult executionId="c13e21dc-2550-424a-836b-81ec3345f7b8" testId="d443b2bd-99d5-d9c3-edac-4639a0acc0c1" testName="AgentOps.Application.Tests.EvaluateAgentBehaviorHandlerTests.Handle_PersistArtifacts_ArtifactRefContainsDigest" computerName="EUITRLP8875" duration="00:00:00.0221039" startTime="2026-05-08T12:17:41.5634914+02:00" endTime="2026-05-08T12:17:41.5860380+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c13e21dc-2550-424a-836b-81ec3345f7b8" />
+    <UnitTestResult executionId="2230a387-1433-439d-9832-2b8f86ab5826" testId="e5ee9004-7c0a-f457-136a-691b5eb64764" testName="AgentOps.Application.Tests.ViewAuditTrailHandlerTests.Handle_InvalidFinalStatus_Throws" computerName="EUITRLP8875" duration="00:00:00.0014541" startTime="2026-05-08T12:17:41.2410626+02:00" endTime="2026-05-08T12:17:41.2422324+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2230a387-1433-439d-9832-2b8f86ab5826" />
+    <UnitTestResult executionId="603eb5d0-a52d-4874-bccc-6bbd545a747a" testId="b446948b-a1f8-c35e-b0f8-bba048c8b2d6" testName="AgentOps.Application.Tests.EvaluateAgentBehaviorHandlerTests.Handle_NoFindings_ReturnsPass" computerName="EUITRLP8875" duration="00:00:00.0086767" startTime="2026-05-08T12:17:41.5863115+02:00" endTime="2026-05-08T12:17:41.5952908+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="603eb5d0-a52d-4874-bccc-6bbd545a747a" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="AgentOps.Application.Tests.CreateAgentDefinitionHandlerTests.Handler_Fail_InvalidInput_DoesNotPersist" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="f762e4b4-2a1c-1f10-a90f-1e71f6740710">
+      <Execution id="667c8a58-a255-4788-aff6-83c65b237f96" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.CreateAgentDefinitionHandlerTests" name="Handler_Fail_InvalidInput_DoesNotPersist" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.CodeReviewerIntegrationTests.Evaluate_CodeReviewer_WithSecret_Fails" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="309773ce-0cc0-a5d8-dc2d-7d045c820c08">
+      <Execution id="8c63948e-67e7-46be-b96a-336ec43c9308" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.CodeReviewerIntegrationTests" name="Evaluate_CodeReviewer_WithSecret_Fails" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.ViewAuditTrailHandlerTests.Handle_InvalidFinalStatus_Throws" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="e5ee9004-7c0a-f457-136a-691b5eb64764">
+      <Execution id="2230a387-1433-439d-9832-2b8f86ab5826" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.ViewAuditTrailHandlerTests" name="Handle_InvalidFinalStatus_Throws" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.EvaluateAgentBehaviorHandlerTests.Handle_NoFindings_ReturnsPass" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="b446948b-a1f8-c35e-b0f8-bba048c8b2d6">
+      <Execution id="603eb5d0-a52d-4874-bccc-6bbd545a747a" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.EvaluateAgentBehaviorHandlerTests" name="Handle_NoFindings_ReturnsPass" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.EvaluateAgentBehaviorHandlerTests.Handle_PersistArtifacts_ArtifactRefContainsDigest" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="d443b2bd-99d5-d9c3-edac-4639a0acc0c1">
+      <Execution id="c13e21dc-2550-424a-836b-81ec3345f7b8" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.EvaluateAgentBehaviorHandlerTests" name="Handle_PersistArtifacts_ArtifactRefContainsDigest" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.CreateAgentDefinitionHandlerTests.Handler_Success_Calls_Repos" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="99626b9e-8847-c50c-1ce5-c36e0c995ece">
+      <Execution id="050a9a22-9916-490b-b938-c56d16c0288a" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.CreateAgentDefinitionHandlerTests" name="Handler_Success_Calls_Repos" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.ViewAuditTrailHandlerTests.Handle_HasMore_WhenMoreThanPageSize" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="fcbc6d46-68d2-34ad-635e-3676214e82f6">
+      <Execution id="e573b929-a511-4c29-b590-203158de8415" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.ViewAuditTrailHandlerTests" name="Handle_HasMore_WhenMoreThanPageSize" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.CodeReviewerAnalyzersTests.SecretPatternAnalyzer_FindsApiKey" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="86b0c25c-c6e3-5cfe-aa12-8e0c7f78c0e9">
+      <Execution id="cef64344-dcee-453a-8a4a-ca02bd488e19" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.CodeReviewerAnalyzersTests" name="SecretPatternAnalyzer_FindsApiKey" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.SecurityIntegrationTests.EvaluateAgentBehavior_WithCriticalSecurityFinding_ResultsInFail" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="bd27bfd4-ca73-e0a7-746b-8f9aa5bb22a7">
+      <Execution id="12282074-253a-41da-8962-f5530e8c87d3" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.SecurityIntegrationTests" name="EvaluateAgentBehavior_WithCriticalSecurityFinding_ResultsInFail" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.CodeReviewerAnalyzersTests.DangerousFunctionAnalyzer_FindsEval" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="f2b4b6c9-36fe-8570-8cd3-85cc767735f9">
+      <Execution id="d8219896-022f-4898-8b8b-4b3ac8ff0888" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.CodeReviewerAnalyzersTests" name="DangerousFunctionAnalyzer_FindsEval" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.ViewAuditTrailHandlerTests.Handle_FromGreaterThanTo_Throws" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="d1e367a6-f6b1-e72a-b9a0-50d532111c3e">
+      <Execution id="b0067ed6-b62d-49c0-a1bf-0e129b98ad35" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.ViewAuditTrailHandlerTests" name="Handle_FromGreaterThanTo_Throws" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.EvaluateAgentBehaviorHandlerTests.Handle_CriticalFinding_ReturnsFail" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="102b0801-a717-c841-f69f-1b23b0dae55d">
+      <Execution id="969f5519-82ff-4c2d-bbad-8721e0588c0b" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.EvaluateAgentBehaviorHandlerTests" name="Handle_CriticalFinding_ReturnsFail" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.CodeReviewerAnalyzersTests.DependencyRiskAnalyzer_FindsKnownVuln" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="d5532d3e-ae05-e487-7035-f3cdd38d1f75">
+      <Execution id="d30cdf19-6842-4aa4-a902-86bf06936e9f" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.CodeReviewerAnalyzersTests" name="DependencyRiskAnalyzer_FindsKnownVuln" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.ViewAuditTrailHandlerTests.Handle_InvalidPageSize_Throws" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="2d29d234-67ed-dc87-cb75-7249f5ecede2">
+      <Execution id="71dd3985-c8c2-443f-aa02-d79c3f0a713a" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.ViewAuditTrailHandlerTests" name="Handle_InvalidPageSize_Throws" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.ViewAuditTrailHandlerTests.Handle_EmptyLog_ReturnsEmptyResponse" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="477a8062-9258-9cf5-30b5-94dadf7c3e48">
+      <Execution id="095ab130-ec75-45cc-8f1f-1e45f7088f29" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.ViewAuditTrailHandlerTests" name="Handle_EmptyLog_ReturnsEmptyResponse" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Application.Tests.ViewAuditTrailHandlerTests.Handle_NoFilter_ReturnsAllUpToPageSize" storage="c:\users\cvida\source\framework\app_console\tests\agentops.application.tests\bin\debug\net10.0\agentops.application.tests.dll" id="06da2712-3900-0268-237d-a3b23487a4f4">
+      <Execution id="a0c65737-aa30-4355-b977-9539dda97104" />
+      <TestMethod codeBase="c:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Application.Tests.ViewAuditTrailHandlerTests" name="Handle_NoFilter_ReturnsAllUpToPageSize" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="fcbc6d46-68d2-34ad-635e-3676214e82f6" executionId="e573b929-a511-4c29-b590-203158de8415" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="477a8062-9258-9cf5-30b5-94dadf7c3e48" executionId="095ab130-ec75-45cc-8f1f-1e45f7088f29" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="309773ce-0cc0-a5d8-dc2d-7d045c820c08" executionId="8c63948e-67e7-46be-b96a-336ec43c9308" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d5532d3e-ae05-e487-7035-f3cdd38d1f75" executionId="d30cdf19-6842-4aa4-a902-86bf06936e9f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="102b0801-a717-c841-f69f-1b23b0dae55d" executionId="969f5519-82ff-4c2d-bbad-8721e0588c0b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d1e367a6-f6b1-e72a-b9a0-50d532111c3e" executionId="b0067ed6-b62d-49c0-a1bf-0e129b98ad35" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="99626b9e-8847-c50c-1ce5-c36e0c995ece" executionId="050a9a22-9916-490b-b938-c56d16c0288a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f2b4b6c9-36fe-8570-8cd3-85cc767735f9" executionId="d8219896-022f-4898-8b8b-4b3ac8ff0888" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="86b0c25c-c6e3-5cfe-aa12-8e0c7f78c0e9" executionId="cef64344-dcee-453a-8a4a-ca02bd488e19" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bd27bfd4-ca73-e0a7-746b-8f9aa5bb22a7" executionId="12282074-253a-41da-8962-f5530e8c87d3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f762e4b4-2a1c-1f10-a90f-1e71f6740710" executionId="667c8a58-a255-4788-aff6-83c65b237f96" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2d29d234-67ed-dc87-cb75-7249f5ecede2" executionId="71dd3985-c8c2-443f-aa02-d79c3f0a713a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="06da2712-3900-0268-237d-a3b23487a4f4" executionId="a0c65737-aa30-4355-b977-9539dda97104" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d443b2bd-99d5-d9c3-edac-4639a0acc0c1" executionId="c13e21dc-2550-424a-836b-81ec3345f7b8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e5ee9004-7c0a-f457-136a-691b5eb64764" executionId="2230a387-1433-439d-9832-2b8f86ab5826" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b446948b-a1f8-c35e-b0f8-bba048c8b2d6" executionId="603eb5d0-a52d-4874-bccc-6bbd545a747a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Resultados sin formato de lista" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="Todos los resultados cargados" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="16" executed="16" passed="16" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.7)&#xD;
+[xUnit.net 00:00:01.04]   Discovering: AgentOps.Application.Tests&#xD;
+[xUnit.net 00:00:01.09]   Discovered:  AgentOps.Application.Tests&#xD;
+[xUnit.net 00:00:01.11]   Starting:    AgentOps.Application.Tests&#xD;
+[xUnit.net 00:00:01.84]   Finished:    AgentOps.Application.Tests&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

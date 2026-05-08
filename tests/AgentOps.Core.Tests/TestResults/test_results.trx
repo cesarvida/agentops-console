@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="7a9a5935-d6d0-4ffe-b70a-8a8d6fb29dbb" name="cvida@EUITRLP8875 2026-05-08 12:17:40" runUser="INTRANET\cvida" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-05-08T12:17:40.1794907+02:00" queuing="2026-05-08T12:17:40.1794913+02:00" start="2026-05-08T12:17:36.5383340+02:00" finish="2026-05-08T12:17:40.1971072+02:00" />
+  <TestSettings name="default" id="b9488317-2bc4-4735-ac50-64d57042580b">
+    <Deployment runDeploymentRoot="cvida_EUITRLP8875_2026-05-08_12_17_40" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="3f3d7b37-fb97-4ed4-880f-4cda4c5c6bda" testId="1f011fdf-e54d-9d94-b82e-08887cccd016" testName="AgentOps.Core.Tests.AgentDefinitionTests.Throws_On_Invalid_Name(name: &quot;ab&quot;, desc: &quot;desc&quot;, purpose: &quot;purpose&quot;)" computerName="EUITRLP8875" duration="00:00:00.4517114" startTime="2026-05-08T12:17:39.5788820+02:00" endTime="2026-05-08T12:17:39.9901625+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3f3d7b37-fb97-4ed4-880f-4cda4c5c6bda" />
+    <UnitTestResult executionId="205730ea-f6e9-490a-b7d3-d105955d13d5" testId="ed77da8e-619f-4a0d-d0a8-aa016d1aa479" testName="AgentOps.Core.Tests.AgentDefinitionTests.Throws_On_Invalid_Name(name: &quot;&quot;, desc: &quot;desc&quot;, purpose: &quot;purpose&quot;)" computerName="EUITRLP8875" duration="00:00:00.0004693" startTime="2026-05-08T12:17:40.0113585+02:00" endTime="2026-05-08T12:17:40.0115862+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="205730ea-f6e9-490a-b7d3-d105955d13d5" />
+    <UnitTestResult executionId="10583f49-9892-4c22-bb52-dc887a3c2f28" testId="876a37bb-0670-e905-0924-eb2e32a16dae" testName="AgentOps.Core.Tests.AgentDefinitionTests.Throws_On_Short_Description" computerName="EUITRLP8875" duration="00:00:00.0007801" startTime="2026-05-08T12:17:40.0182873+02:00" endTime="2026-05-08T12:17:40.0183728+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="10583f49-9892-4c22-bb52-dc887a3c2f28" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="AgentOps.Core.Tests.AgentDefinitionTests.Throws_On_Invalid_Name(name: &quot;&quot;, desc: &quot;desc&quot;, purpose: &quot;purpose&quot;)" storage="c:\users\cvida\source\framework\app_console\tests\agentops.core.tests\bin\debug\net10.0\agentops.core.tests.dll" id="ed77da8e-619f-4a0d-d0a8-aa016d1aa479">
+      <Execution id="205730ea-f6e9-490a-b7d3-d105955d13d5" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Core.Tests\bin\Debug\net10.0\AgentOps.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Core.Tests.AgentDefinitionTests" name="Throws_On_Invalid_Name" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Core.Tests.AgentDefinitionTests.Throws_On_Invalid_Name(name: &quot;ab&quot;, desc: &quot;desc&quot;, purpose: &quot;purpose&quot;)" storage="c:\users\cvida\source\framework\app_console\tests\agentops.core.tests\bin\debug\net10.0\agentops.core.tests.dll" id="1f011fdf-e54d-9d94-b82e-08887cccd016">
+      <Execution id="3f3d7b37-fb97-4ed4-880f-4cda4c5c6bda" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Core.Tests\bin\Debug\net10.0\AgentOps.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Core.Tests.AgentDefinitionTests" name="Throws_On_Invalid_Name" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Core.Tests.AgentDefinitionTests.Throws_On_Short_Description" storage="c:\users\cvida\source\framework\app_console\tests\agentops.core.tests\bin\debug\net10.0\agentops.core.tests.dll" id="876a37bb-0670-e905-0924-eb2e32a16dae">
+      <Execution id="10583f49-9892-4c22-bb52-dc887a3c2f28" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Core.Tests\bin\Debug\net10.0\AgentOps.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Core.Tests.AgentDefinitionTests" name="Throws_On_Short_Description" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="1f011fdf-e54d-9d94-b82e-08887cccd016" executionId="3f3d7b37-fb97-4ed4-880f-4cda4c5c6bda" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ed77da8e-619f-4a0d-d0a8-aa016d1aa479" executionId="205730ea-f6e9-490a-b7d3-d105955d13d5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="876a37bb-0670-e905-0924-eb2e32a16dae" executionId="10583f49-9892-4c22-bb52-dc887a3c2f28" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Resultados sin formato de lista" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="Todos los resultados cargados" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="3" executed="3" passed="3" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.7)&#xD;
+[xUnit.net 00:00:01.08]   Discovering: AgentOps.Core.Tests&#xD;
+[xUnit.net 00:00:01.22]   Discovered:  AgentOps.Core.Tests&#xD;
+[xUnit.net 00:00:01.29]   Starting:    AgentOps.Core.Tests&#xD;
+[xUnit.net 00:00:01.83]   Finished:    AgentOps.Core.Tests&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

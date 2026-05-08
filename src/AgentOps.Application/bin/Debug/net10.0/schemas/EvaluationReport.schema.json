@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentops.example/schemas/EvaluationReport.schema.json",
+  "title": "EvaluationReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evaluationId",
+    "agentId",
+    "scenarioId",
+    "scenarioName",
+    "timestamp",
+    "metrics",
+    "findings",
+    "finalStatus",
+    "overallRiskLevel"
+  ],
+  "properties": {
+    "evaluationId": { "type": "string", "format": "uuid" },
+    "agentId": { "type": "string", "format": "uuid" },
+    "agentVersion": {
+      "type": "string",
+      "oneOf": [
+        { "pattern": "^sha256:[A-Fa-f0-9]{64}$" },
+        { "pattern": "^v?\\d+\\.\\d+\\.\\d+(?:[-+][A-Za-z0-9.]+)?$" }
+      ]
+    },
+    "scenarioId": { "type": "string" },
+    "scenarioName": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "operatorId": { "type": "string" },
+    "metrics": { "$ref": "#/$defs/Metrics" },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/Finding" }, "minItems": 0 },
+    "warnings": { "type": "array", "items": { "type": "string" }, "minItems": 0 },
+    "recommendations": { "type": "array", "items": { "$ref": "#/$defs/Recommendation" }, "minItems": 0 },
+    "finalStatus": { "type": "string", "enum": ["PASS", "REVIEW", "FAIL"] },
+    "overallRiskLevel": { "type": "string", "enum": ["Low", "Medium", "High"] },
+    "artifactRefs": { "type": "array", "items": { "$ref": "#/$defs/ArtifactRef" }, "minItems": 0 },
+    "auditRef": { "type": "string" },
+    "notes": { "type": "string" }
+  },
+  "$defs": {
+    "Metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["securityScore","complianceScore","consistencyScore","explainabilityScore","combinedQualityScore","findingsCount","criticalFindingsCount"],
+      "properties": {
+        "securityScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "complianceScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "consistencyScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "explainabilityScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "combinedQualityScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "findingsCount": { "type": "integer", "minimum": 0 },
+        "criticalFindingsCount": { "type": "integer", "minimum": 0 },
+        "notes": { "type": "string" }
+      }
+    },
+    "Finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findingId","category","severity","summary","evidenceSummary"],
+      "properties": {
+        "findingId": { "type": "string", "format": "uuid" },
+        "category": { "type": "string", "enum": ["Security","Compliance","Consistency","Explainability","Operational","Other"] },
+        "severity": { "type": "string", "enum": ["Low","Medium","High","Critical"] },
+        "location": { "type": "string" },
+        "summary": { "type": "string", "maxLength": 1000 },
+        "evidenceSummary": { "type": "string" },
+        "recommendationId": { "type": "string", "format": "uuid" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "Recommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recommendationId","title","description","severityImpact"],
+      "properties": {
+        "recommendationId": { "type": "string", "format": "uuid" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "severityImpact": { "type": "string", "enum": ["Low","Medium","High"] },
+        "effortEstimate": { "type": "string", "enum": ["Trivial","Low","Medium","High"] },
+        "affectedPaths": { "type": "array", "items": { "type": "string" }, "minItems": 0 },
+        "ticketTemplate": { "type": "string" }
+      }
+    },
+    "ArtifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactId","type","redactionApplied"],
+      "properties": {
+        "artifactId": { "type": "string", "format": "uuid" },
+        "type": { "type": "string", "enum": ["redactedSnapshot","hashOnly","summaryReport"] },
+        "storagePath": { "type": "string" },
+        "digest": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
+        "redactionApplied": { "type": "boolean" },
+        "retentionDays": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "MetricsSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evaluationId","agentId","timestamp","finalStatus","overallRiskLevel","combinedQualityScore","criticalFindingsCount","findingsCount"],
+      "properties": {
+        "evaluationId": { "type": "string", "format": "uuid" },
+        "agentId": { "type": "string", "format": "uuid" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "finalStatus": { "type": "string", "enum": ["PASS","REVIEW","FAIL"] },
+        "overallRiskLevel": { "type": "string", "enum": ["Low","Medium","High"] },
+        "combinedQualityScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "criticalFindingsCount": { "type": "integer", "minimum": 0 },
+        "findingsCount": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "$comment": "PII POLICY: fields 'operatorId', 'findings[*].evidenceSummary', 'notes', and 'artifactRefs.storagePath' MUST NOT contain raw PII. If PII is present, the executor MUST persist hash-only artifactRefs and record redaction in the audit entry."
+}

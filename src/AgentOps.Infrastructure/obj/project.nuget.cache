@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "dgSpecHash": "4iy7P+x9fdM=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\cvida\\source\\framework\\app_console\\src\\AgentOps.Infrastructure\\AgentOps.Infrastructure.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\cvida\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.0\\microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\cvida\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.0\\microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\cvida\\.nuget\\packages\\yamldotnet\\12.2.0\\yamldotnet.12.2.0.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1603",
+      "level": "Warning",
+      "message": "AgentOps.Infrastructure depende de YamlDotNet (>= 12.1.2), pero no se encontró YamlDotNet 12.1.2. YamlDotNet 12.2.0 se resolvió en su lugar.",
+      "projectPath": "C:\\Users\\cvida\\source\\framework\\app_console\\src\\AgentOps.Infrastructure\\AgentOps.Infrastructure.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\cvida\\source\\framework\\app_console\\src\\AgentOps.Infrastructure\\AgentOps.Infrastructure.csproj",
+      "libraryId": "YamlDotNet",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
+}

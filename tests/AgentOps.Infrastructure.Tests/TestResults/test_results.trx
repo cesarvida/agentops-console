@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="a42a49a3-3059-4288-b5a1-77cbbf1296ce" name="cvida@EUITRLP8875 2026-05-08 12:17:41" runUser="INTRANET\cvida" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-05-08T12:17:41.4427813+02:00" queuing="2026-05-08T12:17:41.4427817+02:00" start="2026-05-08T12:17:38.1283680+02:00" finish="2026-05-08T12:17:41.5938072+02:00" />
+  <TestSettings name="default" id="1609bad0-68c2-4586-a7fa-927c791a7d96">
+    <Deployment runDeploymentRoot="cvida_EUITRLP8875_2026-05-08_12_17_41" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="4fd301cc-daec-48d2-be9d-f0277708a5ea" testId="81960b50-15d5-4eeb-cd35-0335694b6384" testName="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_RespectLimit" computerName="EUITRLP8875" duration="00:00:00.0210212" startTime="2026-05-08T12:17:41.4155546+02:00" endTime="2026-05-08T12:17:41.4370559+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4fd301cc-daec-48d2-be9d-f0277708a5ea" />
+    <UnitTestResult executionId="2327a52e-b1ec-4293-97ed-0ba3b181d123" testId="7f23ad07-7577-90c2-bce8-5e412d5ab4ff" testName="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests.SaveReportAsync_DigestIsStable_SameContentSameHash" computerName="EUITRLP8875" duration="00:00:00.4291405" startTime="2026-05-08T12:17:40.8636234+02:00" endTime="2026-05-08T12:17:41.3088414+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2327a52e-b1ec-4293-97ed-0ba3b181d123" />
+    <UnitTestResult executionId="8f5a61c3-ac00-42b0-bd3b-ec228ea78efc" testId="4ea3ca03-0ff2-f094-f40c-a581849e723b" testName="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_FilterByAgentId_ReturnsOnlyMatching" computerName="EUITRLP8875" duration="00:00:00.0365841" startTime="2026-05-08T12:17:41.4099763+02:00" endTime="2026-05-08T12:17:41.4151795+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8f5a61c3-ac00-42b0-bd3b-ec228ea78efc" />
+    <UnitTestResult executionId="bacc0a09-27a7-457b-88d5-8cca6bc30edc" testId="edb159be-9e71-6c43-94a6-14c073fc5835" testName="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_MultipleEntries_ReturnsMostRecentFirst" computerName="EUITRLP8875" duration="00:00:00.0240061" startTime="2026-05-08T12:17:41.3380823+02:00" endTime="2026-05-08T12:17:41.3392343+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bacc0a09-27a7-457b-88d5-8cca6bc30edc" />
+    <UnitTestResult executionId="52d05cd0-da9f-42cd-bb7f-c1e15dc65d29" testId="81371824-f658-954d-4707-1a5d8b0acf8c" testName="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests.SaveReportAsync_DigestIs64HexChars" computerName="EUITRLP8875" duration="00:00:00.0202126" startTime="2026-05-08T12:17:41.3390813+02:00" endTime="2026-05-08T12:17:41.3418849+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="52d05cd0-da9f-42cd-bb7f-c1e15dc65d29" />
+    <UnitTestResult executionId="48306245-8b13-4085-8c6c-74900d00d505" testId="c338ab43-a7b1-593b-8ff9-84727ee39c9b" testName="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_CorruptLine_SkipsAndContinues" computerName="EUITRLP8875" duration="00:00:00.0375874" startTime="2026-05-08T12:17:41.3416698+02:00" endTime="2026-05-08T12:17:41.3718261+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="48306245-8b13-4085-8c6c-74900d00d505" />
+    <UnitTestResult executionId="ea97c7ff-4b22-42ba-87c6-f79b2157cec9" testId="9547c7d1-c375-860b-9b4d-875737830b32" testName="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_FilterByDateRange_ReturnsOnlyInRange" computerName="EUITRLP8875" duration="00:00:00.0291291" startTime="2026-05-08T12:17:41.4375365+02:00" endTime="2026-05-08T12:17:41.4662527+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ea97c7ff-4b22-42ba-87c6-f79b2157cec9" />
+    <UnitTestResult executionId="43b0e080-d64d-40ce-a22d-cc67a1632266" testId="5c41c379-7df0-6274-53ef-d266996216c3" testName="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests.SaveReportAsync_DigestMatchesPersistedFile" computerName="EUITRLP8875" duration="00:00:00.0373159" startTime="2026-05-08T12:17:41.3623798+02:00" endTime="2026-05-08T12:17:41.4100867+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="43b0e080-d64d-40ce-a22d-cc67a1632266" />
+    <UnitTestResult executionId="e87e781a-9c4a-49eb-ba80-ef196873607a" testId="4189795d-1c19-a826-162c-4de32c92b1bd" testName="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_NoFile_ReturnsEmpty" computerName="EUITRLP8875" duration="00:00:00.0061837" startTime="2026-05-08T12:17:41.3722014+02:00" endTime="2026-05-08T12:17:41.3784279+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e87e781a-9c4a-49eb-ba80-ef196873607a" />
+    <UnitTestResult executionId="1ee6f145-c63b-4b39-9a08-e91201653b71" testId="e696fbf0-c1b5-ecf5-ed3f-956d2a969f68" testName="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests.SaveReportAsync_ReturnsNonEmptyArtifactIdAndPath" computerName="EUITRLP8875" duration="00:00:00.0108521" startTime="2026-05-08T12:17:41.3507807+02:00" endTime="2026-05-08T12:17:41.3620548+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1ee6f145-c63b-4b39-9a08-e91201653b71" />
+    <UnitTestResult executionId="01528e68-1cdd-4d9c-980c-d23c2cab0147" testId="488d46f9-5589-c31c-41fd-6b0cd5fb8490" testName="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests.SaveReportAsync_DigestIsNonEmpty" computerName="EUITRLP8875" duration="00:00:00.0108111" startTime="2026-05-08T12:17:41.3425514+02:00" endTime="2026-05-08T12:17:41.3501702+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="01528e68-1cdd-4d9c-980c-d23c2cab0147" />
+    <UnitTestResult executionId="0852781f-c2c6-4d71-b005-e01c5f06f7c7" testId="dea0fb5f-7132-e4d3-3dd9-8c655a1546f6" testName="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_FilterByFinalStatus_ReturnsOnlyMatching" computerName="EUITRLP8875" duration="00:00:00.4406764" startTime="2026-05-08T12:17:40.8617311+02:00" endTime="2026-05-08T12:17:41.3252993+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0852781f-c2c6-4d71-b005-e01c5f06f7c7" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_FilterByAgentId_ReturnsOnlyMatching" storage="c:\users\cvida\source\framework\app_console\tests\agentops.infrastructure.tests\bin\debug\net10.0\agentops.infrastructure.tests.dll" id="4ea3ca03-0ff2-f094-f40c-a581849e723b">
+      <Execution id="8f5a61c3-ac00-42b0-bd3b-ec228ea78efc" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests" name="ReadAsync_FilterByAgentId_ReturnsOnlyMatching" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests.SaveReportAsync_DigestIsStable_SameContentSameHash" storage="c:\users\cvida\source\framework\app_console\tests\agentops.infrastructure.tests\bin\debug\net10.0\agentops.infrastructure.tests.dll" id="7f23ad07-7577-90c2-bce8-5e412d5ab4ff">
+      <Execution id="2327a52e-b1ec-4293-97ed-0ba3b181d123" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests" name="SaveReportAsync_DigestIsStable_SameContentSameHash" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests.SaveReportAsync_DigestIs64HexChars" storage="c:\users\cvida\source\framework\app_console\tests\agentops.infrastructure.tests\bin\debug\net10.0\agentops.infrastructure.tests.dll" id="81371824-f658-954d-4707-1a5d8b0acf8c">
+      <Execution id="52d05cd0-da9f-42cd-bb7f-c1e15dc65d29" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests" name="SaveReportAsync_DigestIs64HexChars" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests.SaveReportAsync_DigestMatchesPersistedFile" storage="c:\users\cvida\source\framework\app_console\tests\agentops.infrastructure.tests\bin\debug\net10.0\agentops.infrastructure.tests.dll" id="5c41c379-7df0-6274-53ef-d266996216c3">
+      <Execution id="43b0e080-d64d-40ce-a22d-cc67a1632266" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests" name="SaveReportAsync_DigestMatchesPersistedFile" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests.SaveReportAsync_ReturnsNonEmptyArtifactIdAndPath" storage="c:\users\cvida\source\framework\app_console\tests\agentops.infrastructure.tests\bin\debug\net10.0\agentops.infrastructure.tests.dll" id="e696fbf0-c1b5-ecf5-ed3f-956d2a969f68">
+      <Execution id="1ee6f145-c63b-4b39-9a08-e91201653b71" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests" name="SaveReportAsync_ReturnsNonEmptyArtifactIdAndPath" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_RespectLimit" storage="c:\users\cvida\source\framework\app_console\tests\agentops.infrastructure.tests\bin\debug\net10.0\agentops.infrastructure.tests.dll" id="81960b50-15d5-4eeb-cd35-0335694b6384">
+      <Execution id="4fd301cc-daec-48d2-be9d-f0277708a5ea" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests" name="ReadAsync_RespectLimit" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_FilterByFinalStatus_ReturnsOnlyMatching" storage="c:\users\cvida\source\framework\app_console\tests\agentops.infrastructure.tests\bin\debug\net10.0\agentops.infrastructure.tests.dll" id="dea0fb5f-7132-e4d3-3dd9-8c655a1546f6">
+      <Execution id="0852781f-c2c6-4d71-b005-e01c5f06f7c7" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests" name="ReadAsync_FilterByFinalStatus_ReturnsOnlyMatching" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_NoFile_ReturnsEmpty" storage="c:\users\cvida\source\framework\app_console\tests\agentops.infrastructure.tests\bin\debug\net10.0\agentops.infrastructure.tests.dll" id="4189795d-1c19-a826-162c-4de32c92b1bd">
+      <Execution id="e87e781a-9c4a-49eb-ba80-ef196873607a" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests" name="ReadAsync_NoFile_ReturnsEmpty" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests.SaveReportAsync_DigestIsNonEmpty" storage="c:\users\cvida\source\framework\app_console\tests\agentops.infrastructure.tests\bin\debug\net10.0\agentops.infrastructure.tests.dll" id="488d46f9-5589-c31c-41fd-6b0cd5fb8490">
+      <Execution id="01528e68-1cdd-4d9c-980c-d23c2cab0147" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Infrastructure.Tests.FileEvaluationReportRepositoryTests" name="SaveReportAsync_DigestIsNonEmpty" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_FilterByDateRange_ReturnsOnlyInRange" storage="c:\users\cvida\source\framework\app_console\tests\agentops.infrastructure.tests\bin\debug\net10.0\agentops.infrastructure.tests.dll" id="9547c7d1-c375-860b-9b4d-875737830b32">
+      <Execution id="ea97c7ff-4b22-42ba-87c6-f79b2157cec9" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests" name="ReadAsync_FilterByDateRange_ReturnsOnlyInRange" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_MultipleEntries_ReturnsMostRecentFirst" storage="c:\users\cvida\source\framework\app_console\tests\agentops.infrastructure.tests\bin\debug\net10.0\agentops.infrastructure.tests.dll" id="edb159be-9e71-6c43-94a6-14c073fc5835">
+      <Execution id="bacc0a09-27a7-457b-88d5-8cca6bc30edc" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests" name="ReadAsync_MultipleEntries_ReturnsMostRecentFirst" />
+    </UnitTest>
+    <UnitTest name="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests.ReadAsync_CorruptLine_SkipsAndContinues" storage="c:\users\cvida\source\framework\app_console\tests\agentops.infrastructure.tests\bin\debug\net10.0\agentops.infrastructure.tests.dll" id="c338ab43-a7b1-593b-8ff9-84727ee39c9b">
+      <Execution id="48306245-8b13-4085-8c6c-74900d00d505" />
+      <TestMethod codeBase="C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="AgentOps.Infrastructure.Tests.FileAuditTrailReaderTests" name="ReadAsync_CorruptLine_SkipsAndContinues" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="81960b50-15d5-4eeb-cd35-0335694b6384" executionId="4fd301cc-daec-48d2-be9d-f0277708a5ea" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7f23ad07-7577-90c2-bce8-5e412d5ab4ff" executionId="2327a52e-b1ec-4293-97ed-0ba3b181d123" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4ea3ca03-0ff2-f094-f40c-a581849e723b" executionId="8f5a61c3-ac00-42b0-bd3b-ec228ea78efc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="edb159be-9e71-6c43-94a6-14c073fc5835" executionId="bacc0a09-27a7-457b-88d5-8cca6bc30edc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="81371824-f658-954d-4707-1a5d8b0acf8c" executionId="52d05cd0-da9f-42cd-bb7f-c1e15dc65d29" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c338ab43-a7b1-593b-8ff9-84727ee39c9b" executionId="48306245-8b13-4085-8c6c-74900d00d505" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9547c7d1-c375-860b-9b4d-875737830b32" executionId="ea97c7ff-4b22-42ba-87c6-f79b2157cec9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5c41c379-7df0-6274-53ef-d266996216c3" executionId="43b0e080-d64d-40ce-a22d-cc67a1632266" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4189795d-1c19-a826-162c-4de32c92b1bd" executionId="e87e781a-9c4a-49eb-ba80-ef196873607a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e696fbf0-c1b5-ecf5-ed3f-956d2a969f68" executionId="1ee6f145-c63b-4b39-9a08-e91201653b71" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="488d46f9-5589-c31c-41fd-6b0cd5fb8490" executionId="01528e68-1cdd-4d9c-980c-d23c2cab0147" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dea0fb5f-7132-e4d3-3dd9-8c655a1546f6" executionId="0852781f-c2c6-4d71-b005-e01c5f06f7c7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Resultados sin formato de lista" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="Todos los resultados cargados" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="12" executed="12" passed="12" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.7)&#xD;
+[xUnit.net 00:00:00.92]   Discovering: AgentOps.Infrastructure.Tests&#xD;
+[xUnit.net 00:00:00.97]   Discovered:  AgentOps.Infrastructure.Tests&#xD;
+[xUnit.net 00:00:01.00]   Starting:    AgentOps.Infrastructure.Tests&#xD;
+[xUnit.net 00:00:01.63]   Finished:    AgentOps.Infrastructure.Tests&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

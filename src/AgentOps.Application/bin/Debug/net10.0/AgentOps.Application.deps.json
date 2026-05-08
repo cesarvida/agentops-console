@@ -1,0 +1,73 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "AgentOps.Application/1.0.0": {
+        "dependencies": {
+          "AgentOps.Agents": "1.0.0",
+          "AgentOps.Core": "1.0.0",
+          "AgentOps.Security": "1.0.0"
+        },
+        "runtime": {
+          "AgentOps.Application.dll": {}
+        }
+      },
+      "AgentOps.Agents/1.0.0": {
+        "dependencies": {
+          "AgentOps.Core": "1.0.0"
+        },
+        "runtime": {
+          "AgentOps.Agents.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "AgentOps.Core/1.0.0": {
+        "runtime": {
+          "AgentOps.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "AgentOps.Security/1.0.0": {
+        "dependencies": {
+          "AgentOps.Core": "1.0.0"
+        },
+        "runtime": {
+          "AgentOps.Security.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "AgentOps.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AgentOps.Agents/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AgentOps.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AgentOps.Security/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
