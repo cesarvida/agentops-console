@@ -1,0 +1,8 @@
+# Ignore build outputs
+**/bin/
+**/obj/
+*.dll
+*.pdb
+
+# VS Code
+.vscode/
