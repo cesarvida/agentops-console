@@ -6,3 +6,5 @@
 
 # VS Code
 .vscode/
+.git-tracked-files.txt
+commitmsg.txt
