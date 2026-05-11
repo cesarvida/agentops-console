@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using AgentOps.GitHub;
 using AgentOps.Application.UseCases.EvaluateAgentBehavior;
 using AgentOps.Application.UseCases.CreateAgentDefinition;
+using AgentOps.Core.Entities;
+using AgentOps.Core.ValueObjects;
 using Microsoft.Extensions.Logging;
 
 namespace AgentOps.CLI.Commands;
@@ -90,8 +92,8 @@ public sealed class AnalyzePullRequestCommand
             {
                 Console.WriteLine("⚠️  Creating temporary Code Reviewer agent for analysis...");
                 // Use a deterministic ID for the CLI
-                var tempAgentId = new AgentOps.Core.ValueObjects.AgentId("cli-code-reviewer-" + Guid.NewGuid().ToString());
-                codeReviewer = new AgentOps.Core.Entities.AgentDefinition
+                var tempAgentId = new AgentId("cli-code-reviewer-" + Guid.NewGuid().ToString());
+                codeReviewer = new AgentDefinition
                 {
                     Id = tempAgentId,
                     Name = "Code Reviewer (CLI)",
@@ -99,7 +101,7 @@ public sealed class AnalyzePullRequestCommand
                     Purpose = "Analyze PR diffs for security issues",
                     Rules = new System.Collections.Generic.List<string> { "Detect secrets", "Detect dangerous APIs" },
                     Tools = new System.Collections.Generic.List<string> { "StaticCodeScan" },
-                    Configuration = new AgentOps.Core.Entities.AgentConfiguration { RequiresAudit = true, AllowHallucination = false }
+                    Configuration = new AgentConfiguration { RequiresAudit = true, AllowHallucination = false }
                 };
             }
 
