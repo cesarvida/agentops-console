@@ -87,22 +87,23 @@ public sealed class AnalyzePullRequestCommand
             var agents = await _agentRepo.ListAllAsync();
             var codeReviewer = agents.FirstOrDefault(a => a.Name == "Code Reviewer");
             
-            // If no agent exists, create a minimal one for this analysis
-            if (codeReviewer == null || string.IsNullOrEmpty(codeReviewer.Id?.Value))
+            // If no agent exists or ID is invalid, create a temporary one
+            if (codeReviewer == null || string.IsNullOrEmpty(codeReviewer.Id.Value))
             {
                 Console.WriteLine("⚠️  Creating temporary Code Reviewer agent for analysis...");
-                // Use a deterministic ID for the CLI
+                // Create a minimal agent definition with all required parameters
                 var tempAgentId = new AgentId("cli-code-reviewer-" + Guid.NewGuid().ToString());
-                codeReviewer = new AgentDefinition
-                {
-                    Id = tempAgentId,
-                    Name = "Code Reviewer (CLI)",
-                    Description = "Temporary agent for CLI PR analysis",
-                    Purpose = "Analyze PR diffs for security issues",
-                    Rules = new System.Collections.Generic.List<string> { "Detect secrets", "Detect dangerous APIs" },
-                    Tools = new System.Collections.Generic.List<string> { "StaticCodeScan" },
-                    Configuration = new AgentConfiguration { RequiresAudit = true, AllowHallucination = false }
-                };
+                codeReviewer = new AgentDefinition(
+                    tempAgentId,
+                    "Code Reviewer (CLI)",
+                    "Temporary agent for CLI PR analysis.",
+                    "Analyze PR diffs for security issues",
+                    new System.Collections.Generic.List<string> { "Detect secrets", "Detect dangerous APIs" },
+                    new System.Collections.Generic.List<string> { "StaticCodeScan" },
+                    new AgentConfiguration { RequiresAudit = true, AllowHallucination = false },
+                    DateTime.UtcNow,
+                    "1.0"
+                );
             }
 
             // Evaluate the PR diff using existing analyzers (handler orchestrates secret/danger/dep analyzers)
