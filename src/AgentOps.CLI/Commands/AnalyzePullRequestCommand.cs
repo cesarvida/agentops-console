@@ -19,19 +19,22 @@ public sealed class AnalyzePullRequestCommand
     private readonly EvaluateAgentBehaviorHandler _evaluator;
     private readonly IAgentDefinitionRepository _agentRepo;
     private readonly IAuditRepository _auditRepo;
+    private readonly AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer _semanticAnalyzer;
 
     public AnalyzePullRequestCommand(
         IGitHubPullRequestClient githubClient,
         ILogger<AnalyzePullRequestCommand> logger,
         EvaluateAgentBehaviorHandler evaluator,
         IAgentDefinitionRepository agentRepo,
-        IAuditRepository auditRepo)
+        IAuditRepository auditRepo,
+        AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer semanticAnalyzer)
     {
         _githubClient = githubClient ?? throw new ArgumentNullException(nameof(githubClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _evaluator = evaluator ?? throw new ArgumentNullException(nameof(evaluator));
         _agentRepo = agentRepo ?? throw new ArgumentNullException(nameof(agentRepo));
         _auditRepo = auditRepo ?? throw new ArgumentNullException(nameof(auditRepo));
+        _semanticAnalyzer = semanticAnalyzer ?? throw new ArgumentNullException(nameof(semanticAnalyzer));
     }
 
     public async Task ExecuteAsync(string? owner = null, string? repo = null, int? prNumber = null)
@@ -98,6 +101,27 @@ public sealed class AnalyzePullRequestCommand
             };
 
             var resp = await _evaluator.HandleAsync(req);
+
+            // Call optional semantic analyzer (LLM-based, gracefully skipped if not configured)
+            Console.WriteLine("\n🤖 Running semantic code analysis...");
+            var semanticScenario = new AgentOps.Application.UseCases.EvaluateAgentBehavior.Models.EvaluationScenario
+            {
+                ScenarioId = "semantic-analysis-v1",
+                Name = "Semantic Code Quality Analysis",
+                Type = "CodeReview",
+                TestVectors = new System.Collections.Generic.List<string> { combinedDiff }
+            };
+            var semanticResult = _semanticAnalyzer.Analyze(codeReviewer, semanticScenario);
+            if (semanticResult.Findings.Any())
+            {
+                resp.TopFindings.AddRange(semanticResult.Findings.Take(3).Select(f => new AgentOps.Application.UseCases.EvaluateAgentBehavior.FindingSummary
+                {
+                    FindingId = f.FindingId,
+                    Category = f.Category,
+                    Severity = f.Severity,
+                    Summary = f.Summary
+                }));
+            }
 
             // Display results
             DisplaySnapshot(snapshot);
