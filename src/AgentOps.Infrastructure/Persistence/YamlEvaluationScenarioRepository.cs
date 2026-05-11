@@ -18,15 +18,45 @@ namespace AgentOps.Infrastructure.Persistence
         public YamlEvaluationScenarioRepository()
         {
             // Try multiple locations to find evaluation-scenarios.mcp.yaml
+            // When running via 'dotnet run' in CI, the working directory is the project root
             var candidates = new[]
             {
+                // 1. Look in AppContext.BaseDirectory (output directory)
                 Path.Combine(AppContext.BaseDirectory, "evaluation-scenarios.mcp.yaml"),
-                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "AgentOps.Infrastructure", "Resources", "evaluation-scenarios.mcp.yaml"),
+                
+                // 2. Look relative to current directory (for 'dotnet run' from project root)
+                "evaluation-scenarios.mcp.yaml",
                 Path.Combine(Directory.GetCurrentDirectory(), "evaluation-scenarios.mcp.yaml"),
-                "evaluation-scenarios.mcp.yaml"
+                
+                // 3. Look in source tree relative to output directory
+                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "AgentOps.Infrastructure", "Resources", "evaluation-scenarios.mcp.yaml"),
+                
+                // 4. Absolute path from project structure
+                Path.Combine(Path.GetDirectoryName(typeof(YamlEvaluationScenarioRepository).Assembly.Location) ?? AppContext.BaseDirectory, 
+                    "..", "..", "..", "AgentOps.Infrastructure", "Resources", "evaluation-scenarios.mcp.yaml")
             };
 
-            _yamlPath = candidates.FirstOrDefault(p => File.Exists(p)) ?? candidates[0];
+            _yamlPath = null;
+            foreach (var candidate in candidates)
+            {
+                var normalized = Path.GetFullPath(candidate);
+                if (File.Exists(normalized))
+                {
+                    _yamlPath = normalized;
+                    break;
+                }
+            }
+
+            if (_yamlPath == null)
+            {
+                _yamlPath = candidates[0]; // fallback to first candidate for error reporting
+                Console.WriteLine($"[WARN] EvaluationScenario file not found. Tried:");
+                foreach (var c in candidates)
+                {
+                    Console.WriteLine($"  - {Path.GetFullPath(c)}");
+                }
+            }
+
             Load();
         }
 
