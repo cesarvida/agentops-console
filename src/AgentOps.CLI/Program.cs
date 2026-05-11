@@ -54,6 +54,10 @@ var host = Host.CreateDefaultBuilder(args)
 		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityAnalyzer, AgentOps.Security.SecurityAnalyzer>();
 		services.AddSingleton<RunCodeReviewCommand>();
 		services.AddSingleton<RunComplianceCheckCommand>();
+		// GitHub PR Analyzer
+		services.AddSingleton<AgentOps.GitHub.IGitHubPullRequestClient>(sp =>
+			new AgentOps.GitHub.GitHubPullRequestClient(Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? ""));
+		services.AddSingleton<AgentOps.CLI.Commands.AnalyzePullRequestCommand>();
 		
 		// Register optional LLM semantic analyzer (only if Azure OpenAI is configured)
 		var azureOpenAIOptions = new AzureOpenAIOptions();
