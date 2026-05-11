@@ -8,6 +8,9 @@ using AgentOps.Application.UseCases.CreateAgentDefinition;
 using AgentOps.Application.UseCases.ViewAuditTrail;
 using AgentOps.Infrastructure.Persistence;
 
+// Check if running in CI/non-interactive mode for PR analysis
+bool isCIPRAnalysis = args.Length >= 4 && args[0] == "analyze-pr";
+
 var host = Host.CreateDefaultBuilder(args)
 	.ConfigureServices((context, services) =>
 	{
@@ -137,49 +140,91 @@ console.WriteLine("━━━━━━━━━━━━━━━━━━━━�
 console.WriteLine("     AgentOps Governance Console [MVP]     ");
 console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 console.WriteLine("");
-console.WriteLine("1) Create New Agent Definition");
-console.WriteLine("2) List Agent Definitions");
-console.WriteLine("3) Exit");
-console.WriteLine("4) Evaluate Agent Behavior");
-console.WriteLine("5) View Audit Trail");
-console.WriteLine("6) Run Code Review (simulated)");
-console.WriteLine("7) Run Compliance Check (simulated)");
-console.WriteLine("");
-console.WriteLine("Select option: ");
-var opt = Console.ReadLine();
 
-if (opt == "1")
+// If running in CI mode for PR analysis, bypass interactive menu
+if (isCIPRAnalysis && args.Length >= 4)
 {
-	await createAgentCmd.ExecuteAsync();
-}
-else if (opt == "4")
-{
-	var evalCmd = host.Services.GetRequiredService<EvaluateAgentBehaviorCommand>();
-	await evalCmd.ExecuteAsync();
-}
-else if (opt == "2")
-{
-	var listCmd = host.Services.GetRequiredService<ListAgentsCommand>();
-	await listCmd.ExecuteAsync();
-}
-else if (opt == "5")
-{
-	var auditCmd = host.Services.GetRequiredService<ViewAuditTrailCommand>();
-	await auditCmd.ExecuteAsync();
-}
-else if (opt == "6")
-{
-	var runCmd = host.Services.GetRequiredService<RunCodeReviewCommand>();
-	await runCmd.ExecuteAsync();
-}
-else if (opt == "7")
-{
-    var runCmd = host.Services.GetRequiredService<RunComplianceCheckCommand>();
-    await runCmd.ExecuteAsync();
+	var analyzePRCmd = host.Services.GetRequiredService<AgentOps.CLI.Commands.AnalyzePullRequestCommand>();
+	try
+	{
+		if (int.TryParse(args[3], out int prNumber))
+		{
+			await analyzePRCmd.ExecuteAsync(args[1], args[2], prNumber);
+		}
+		else
+		{
+			console.WriteLine("❌ Invalid PR number provided");
+		}
+	}
+	catch (Exception ex)
+	{
+		console.WriteLine($"❌ Error during PR analysis: {ex.Message}");
+	}
 }
 else
 {
-	console.WriteLine("Exiting AgentOps Console. Goodbye.");
+	// Interactive menu mode
+	console.WriteLine("1) Create New Agent Definition");
+	console.WriteLine("2) List Agent Definitions");
+	console.WriteLine("3) Exit");
+	console.WriteLine("4) Evaluate Agent Behavior");
+	console.WriteLine("5) View Audit Trail");
+	console.WriteLine("6) Run Code Review (simulated)");
+	console.WriteLine("7) Run Compliance Check (simulated)");
+	console.WriteLine("8) Analyze GitHub PR (real PR from GitHub)");
+	console.WriteLine("");
+	console.WriteLine("Select option: ");
+	var opt = Console.ReadLine();
+
+	if (opt == "1")
+	{
+		await createAgentCmd.ExecuteAsync();
+	}
+	else if (opt == "4")
+	{
+		var evalCmd = host.Services.GetRequiredService<EvaluateAgentBehaviorCommand>();
+		await evalCmd.ExecuteAsync();
+	}
+	else if (opt == "2")
+	{
+		var listCmd = host.Services.GetRequiredService<ListAgentsCommand>();
+		await listCmd.ExecuteAsync();
+	}
+	else if (opt == "5")
+	{
+		var auditCmd = host.Services.GetRequiredService<ViewAuditTrailCommand>();
+		await auditCmd.ExecuteAsync();
+	}
+	else if (opt == "6")
+	{
+		var runCmd = host.Services.GetRequiredService<RunCodeReviewCommand>();
+		await runCmd.ExecuteAsync();
+	}
+	else if (opt == "7")
+	{
+	    var runCmd = host.Services.GetRequiredService<RunComplianceCheckCommand>();
+	    await runCmd.ExecuteAsync();
+	}
+	else if (opt == "8")
+	{
+		var analyzePRCmd = host.Services.GetRequiredService<AgentOps.CLI.Commands.AnalyzePullRequestCommand>();
+		// Read owner, repo, and PR number from stdin
+		var owner = Console.ReadLine() ?? "";
+		var repo = Console.ReadLine() ?? "";
+		var prNumberStr = Console.ReadLine() ?? "";
+		if (int.TryParse(prNumberStr, out var prNumber))
+		{
+			await analyzePRCmd.ExecuteAsync(owner, repo, prNumber);
+		}
+		else
+		{
+			await analyzePRCmd.ExecuteAsync();
+		}
+	}
+	else
+	{
+		console.WriteLine("Exiting AgentOps Console. Goodbye.");
+	}
 }
 
 // Ensure required data directory exists

@@ -35,12 +35,9 @@ jobs:
 
       - name: Run AgentOps PR analysis
         env:
-          OWNER: ${{ github.repository_owner }}
-          REPO: ${{ github.event.repository.name }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Running AgentOps PR analysis"
-          printf "8\n$OWNER\n$REPO\n$PR_NUMBER\n" | dotnet run --project src/AgentOps.CLI/AgentOps.CLI.csproj
+          dotnet run --project src/AgentOps.CLI/AgentOps.CLI.csproj -- analyze-pr ${{ github.repository_owner }} ${{ github.event.repository.name }} ${{ github.event.pull_request.number }}
 
       - name: Upload evaluation artifacts
         if: always()
