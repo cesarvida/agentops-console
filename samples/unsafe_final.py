@@ -1,0 +1,1 @@
+API_KEY_SECRET = "sk_test_12345678"
