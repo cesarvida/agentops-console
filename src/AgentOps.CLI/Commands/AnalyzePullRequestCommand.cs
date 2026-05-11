@@ -105,7 +105,7 @@ public sealed class AnalyzePullRequestCommand
                     "1.0"
                 );
                 // Persist the temporary agent so it can be found by the evaluator
-                await _agentRepo.SaveAsync(codeReviewer);
+                await _agentRepo.AddAsync(codeReviewer);
                 Console.WriteLine("✅ Temporary agent created and saved.");
             }
 
