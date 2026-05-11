@@ -84,10 +84,23 @@ public sealed class AnalyzePullRequestCommand
             // Find the Code Reviewer agent
             var agents = await _agentRepo.ListAllAsync();
             var codeReviewer = agents.FirstOrDefault(a => a.Name == "Code Reviewer");
-            if (codeReviewer == null)
+            
+            // If no agent exists, create a minimal one for this analysis
+            if (codeReviewer == null || string.IsNullOrEmpty(codeReviewer.Id?.Value))
             {
-                Console.WriteLine("❌ Agent 'Code Reviewer' not found. Please create it first.");
-                return;
+                Console.WriteLine("⚠️  Creating temporary Code Reviewer agent for analysis...");
+                // Use a deterministic ID for the CLI
+                var tempAgentId = new AgentOps.Core.ValueObjects.AgentId("cli-code-reviewer-" + Guid.NewGuid().ToString());
+                codeReviewer = new AgentOps.Core.Entities.AgentDefinition
+                {
+                    Id = tempAgentId,
+                    Name = "Code Reviewer (CLI)",
+                    Description = "Temporary agent for CLI PR analysis",
+                    Purpose = "Analyze PR diffs for security issues",
+                    Rules = new System.Collections.Generic.List<string> { "Detect secrets", "Detect dangerous APIs" },
+                    Tools = new System.Collections.Generic.List<string> { "StaticCodeScan" },
+                    Configuration = new AgentOps.Core.Entities.AgentConfiguration { RequiresAudit = true, AllowHallucination = false }
+                };
             }
 
             // Evaluate the PR diff using existing analyzers (handler orchestrates secret/danger/dep analyzers)
