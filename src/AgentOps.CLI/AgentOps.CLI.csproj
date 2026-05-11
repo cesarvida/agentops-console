@@ -19,4 +19,18 @@
     <ProjectReference Include="..\AgentOps.GitHub\AgentOps.GitHub.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Ensure evaluation scenarios YAML is available at runtime for the CLI -->
+    <None Include="..\AgentOps.Infrastructure\Resources\evaluation-scenarios.mcp.yaml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Ensure EvaluationReport JSON schema is available at runtime -->
+    <None Include="..\AgentOps.Application\schemas\EvaluationReport.schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
