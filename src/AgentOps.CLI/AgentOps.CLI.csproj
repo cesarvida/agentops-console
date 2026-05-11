@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AgentOps.Application\AgentOps.Application.csproj" />
     <ProjectReference Include="..\AgentOps.Infrastructure\AgentOps.Infrastructure.csproj" />
+    <ProjectReference Include="..\AgentOps.GitHub\AgentOps.GitHub.csproj" />
   </ItemGroup>
 
 </Project>

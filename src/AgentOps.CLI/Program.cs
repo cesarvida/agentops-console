@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using AgentOps.CLI;
+using AgentOps.CLI.Commands;
+using AgentOps.GitHub;
 using AgentOps.Application.UseCases.CreateAgentDefinition;
 using AgentOps.Application.UseCases.ViewAuditTrail;
 using AgentOps.Infrastructure.Persistence;
@@ -37,6 +39,13 @@ var host = Host.CreateDefaultBuilder(args)
 				sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AgentOps.Infrastructure.Persistence.FileAuditTrailReader>>()));
 		services.AddSingleton<ViewAuditTrailHandler>();
 		services.AddSingleton<ViewAuditTrailCommand>();
+		// GitHub PR analysis
+		services.AddSingleton<IGitHubPullRequestClient>(sp =>
+		{
+			var token = Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? string.Empty;
+			return new GitHubPullRequestClient(token);
+		});
+		services.AddSingleton<AnalyzePullRequestCommand>();
 		// Register security rules and analyzer for deterministic checks
 		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.PromptInjectionRule>();
 		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.ToolAbuseRule>();
@@ -125,6 +134,7 @@ console.WriteLine("4) Evaluate Agent Behavior");
 console.WriteLine("5) View Audit Trail");
 console.WriteLine("6) Run Code Review (simulated)");
 console.WriteLine("7) Run Compliance Check (simulated)");
+console.WriteLine("8) Analyze GitHub Pull Request");
 console.WriteLine("");
 console.WriteLine("Select option: ");
 var opt = Console.ReadLine();
@@ -157,6 +167,11 @@ else if (opt == "7")
 {
     var runCmd = host.Services.GetRequiredService<RunComplianceCheckCommand>();
     await runCmd.ExecuteAsync();
+}
+else if (opt == "8")
+{
+	var prCmd = host.Services.GetRequiredService<AnalyzePullRequestCommand>();
+	await prCmd.ExecuteAsync();
 }
 else
 {
