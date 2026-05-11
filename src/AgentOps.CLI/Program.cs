@@ -112,7 +112,7 @@ if (!existing.Any(a => a.Name == "Code Reviewer"))
 	{
 		console.WriteLine("Seeded Code Reviewer agent.");
 	}
-	// Reload agents to get the newly created one
+	// Reload agents to get the newly created one with valid ID
 	existing = await agentRepoSvc.ListAllAsync();
 }
 
