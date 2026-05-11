@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using AgentOps.CLI;
+using AgentOps.CLI.Options;
 using AgentOps.Application.UseCases.CreateAgentDefinition;
 using AgentOps.Application.UseCases.ViewAuditTrail;
 using AgentOps.Infrastructure.Persistence;
@@ -50,6 +51,24 @@ var host = Host.CreateDefaultBuilder(args)
 		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityAnalyzer, AgentOps.Security.SecurityAnalyzer>();
 		services.AddSingleton<RunCodeReviewCommand>();
 		services.AddSingleton<RunComplianceCheckCommand>();
+		
+		// Register optional LLM semantic analyzer (only if Azure OpenAI is configured)
+		var azureOpenAIOptions = new AzureOpenAIOptions();
+		if (azureOpenAIOptions.IsConfigured)
+		{
+			services.AddSingleton<AgentOps.Application.Interfaces.ILLMClient>(sp =>
+				new AzureOpenAIClient(azureOpenAIOptions.Endpoint, azureOpenAIOptions.Key, 
+					sp.GetRequiredService<ILogger<AzureOpenAIClient>>()));
+			services.AddSingleton<AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer>(sp =>
+				new AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer(
+					sp.GetRequiredService<AgentOps.Application.Interfaces.ILLMClient>()));
+		}
+		else
+		{
+			// Semantic analyzer without LLM client (graceful degradation)
+			services.AddSingleton<AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer>(sp =>
+				new AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer(null));
+		}
 	})
 	.ConfigureLogging(logging =>
 	{
