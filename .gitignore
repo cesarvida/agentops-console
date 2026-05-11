@@ -1,0 +1,10 @@
+# Ignore build outputs
+**/bin/
+**/obj/
+*.dll
+*.pdb
+
+# VS Code
+.vscode/
+.git-tracked-files.txt
+commitmsg.txt
