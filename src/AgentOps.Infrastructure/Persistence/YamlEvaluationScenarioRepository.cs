@@ -17,14 +17,27 @@ namespace AgentOps.Infrastructure.Persistence
 
         public YamlEvaluationScenarioRepository()
         {
-            // Expect file copied to output root
-            _yamlPath = Path.Combine(AppContext.BaseDirectory, "evaluation-scenarios.mcp.yaml");
+            // Try multiple locations to find evaluation-scenarios.mcp.yaml
+            var candidates = new[]
+            {
+                Path.Combine(AppContext.BaseDirectory, "evaluation-scenarios.mcp.yaml"),
+                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "AgentOps.Infrastructure", "Resources", "evaluation-scenarios.mcp.yaml"),
+                Path.Combine(Directory.GetCurrentDirectory(), "evaluation-scenarios.mcp.yaml"),
+                "evaluation-scenarios.mcp.yaml"
+            };
+
+            _yamlPath = candidates.FirstOrDefault(p => File.Exists(p)) ?? candidates[0];
             Load();
         }
 
         private void Load()
         {
-            if (!File.Exists(_yamlPath)) return;
+            if (!File.Exists(_yamlPath))
+            {
+                Console.WriteLine($"[WARN] EvaluationScenario file not found at: {_yamlPath}");
+                return;
+            }
+
             var text = File.ReadAllText(_yamlPath);
             var deserializer = new DeserializerBuilder()
                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
@@ -41,9 +54,9 @@ namespace AgentOps.Infrastructure.Persistence
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore parse errors; repository will be empty
+                Console.WriteLine($"[WARN] Failed to parse EvaluationScenario YAML: {ex.Message}");
             }
         }
 
