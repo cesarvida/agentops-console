@@ -1,0 +1,38 @@
+{
+  "EvaluationId": "a932eddf-1638-4641-9704-f97946da1c4e",
+  "AgentId": "b5ced351-42e2-416b-8da5-c93d4cb9a708",
+  "AgentVersion": "1.0",
+  "ScenarioId": "code-review-security-suite-v1",
+  "ScenarioName": "Code Review Security Suite (v1)",
+  "Timestamp": "2026-05-11T11:51:41.3162288Z",
+  "OperatorId": "cli",
+  "Metrics": {
+    "SecurityScore": 25,
+    "ComplianceScore": 100,
+    "ConsistencyScore": 100,
+    "ExplainabilityScore": 50,
+    "CombinedQualityScore": 65,
+    "FindingsCount": 1,
+    "CriticalFindingsCount": 0,
+    "Notes": null
+  },
+  "Findings": [
+    {
+      "FindingId": "96363a7f-fe14-4353-906d-42a6d5171eb5",
+      "Category": "Security",
+      "Severity": "High",
+      "Location": "diff",
+      "Summary": "Use of potentially dangerous function or pattern: eval(",
+      "EvidenceSummary": "Pattern \u0027eval(\u0027 detected in diff.",
+      "RecommendationId": null,
+      "Confidence": null
+    }
+  ],
+  "Warnings": [],
+  "Recommendations": [],
+  "FinalStatus": "REVIEW",
+  "OverallRiskLevel": "Medium",
+  "ArtifactRefs": [],
+  "AuditRef": null,
+  "Notes": null
+}

@@ -78,17 +78,20 @@ namespace AgentOps.Application.UseCases.EvaluateAgentBehavior
                 var secretAnalyzer = new SecretPatternAnalyzer();
                 var dangerAnalyzer = new DangerousFunctionAnalyzer();
                 var depAnalyzer = new DependencyRiskAnalyzer();
+                var injectionAnalyzer = new CodeInjectionAnalyzer();
 
                 var r1 = secretAnalyzer.Analyze(agent, scenario);
                 var r2 = dangerAnalyzer.Analyze(agent, scenario);
                 var r3 = depAnalyzer.Analyze(agent, scenario);
+                var r4 = injectionAnalyzer.Analyze(agent, scenario);
 
                 // aggregate findings and compute combined score via max-risk
                 var agg = new AnalyzerResult();
                 agg.Findings.AddRange(r1.Findings);
                 agg.Findings.AddRange(r2.Findings);
                 agg.Findings.AddRange(r3.Findings);
-                var maxRisk = Math.Max(100 - r1.Score, Math.Max(100 - r2.Score, 100 - r3.Score));
+                agg.Findings.AddRange(r4.Findings);
+                var maxRisk = Math.Max(100 - r1.Score, Math.Max(100 - r2.Score, Math.Max(100 - r3.Score, 100 - r4.Score)));
                 agg.Score = Math.Max(0, 100 - maxRisk);
                 codeReviewAggregate = agg;
             }
