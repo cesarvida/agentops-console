@@ -17,43 +17,69 @@ namespace AgentOps.Infrastructure.Persistence
 
         public YamlEvaluationScenarioRepository()
         {
-            // Try multiple locations to find evaluation-scenarios.mcp.yaml
-            // When running via 'dotnet run' in CI, the working directory is the project root
-            var candidates = new[]
+            // Get the directory where this assembly (Infrastructure) is located
+            var infrastructureDir = Path.GetDirectoryName(typeof(YamlEvaluationScenarioRepository).Assembly.Location);
+            
+            // Build candidate paths for evaluation-scenarios.mcp.yaml
+            var candidates = new List<string>();
+            
+            if (!string.IsNullOrEmpty(infrastructureDir))
             {
-                // 1. Look in AppContext.BaseDirectory (output directory)
-                Path.Combine(AppContext.BaseDirectory, "evaluation-scenarios.mcp.yaml"),
+                // 1. Same directory as Infrastructure assembly (if copied there)
+                candidates.Add(Path.Combine(infrastructureDir, "evaluation-scenarios.mcp.yaml"));
                 
-                // 2. Look relative to current directory (for 'dotnet run' from project root)
-                "evaluation-scenarios.mcp.yaml",
-                Path.Combine(Directory.GetCurrentDirectory(), "evaluation-scenarios.mcp.yaml"),
+                // 2. In a Resources subdirectory relative to Infrastructure assembly
+                candidates.Add(Path.Combine(infrastructureDir, "Resources", "evaluation-scenarios.mcp.yaml"));
                 
-                // 3. Look in source tree relative to output directory
-                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "AgentOps.Infrastructure", "Resources", "evaluation-scenarios.mcp.yaml"),
-                
-                // 4. Absolute path from project structure
-                Path.Combine(Path.GetDirectoryName(typeof(YamlEvaluationScenarioRepository).Assembly.Location) ?? AppContext.BaseDirectory, 
-                    "..", "..", "..", "AgentOps.Infrastructure", "Resources", "evaluation-scenarios.mcp.yaml")
-            };
+                // 3. Walk up to find source tree: bin/Release/net10.0 -> src/AgentOps.Infrastructure/Resources
+                var parts = infrastructureDir.Split(Path.DirectorySeparatorChar);
+                if (parts.Length > 3 && parts[^3] == "bin")
+                {
+                    // We're in bin/Release/net10.0, walk up to src
+                    var basePath = string.Join(Path.DirectorySeparatorChar, parts.Take(parts.Length - 3));
+                    candidates.Add(Path.Combine(basePath, "AgentOps.Infrastructure", "Resources", "evaluation-scenarios.mcp.yaml"));
+                }
+            }
+            
+            // 4. Current working directory (for running from project root)
+            candidates.Add("evaluation-scenarios.mcp.yaml");
+            candidates.Add(Path.Combine(Directory.GetCurrentDirectory(), "evaluation-scenarios.mcp.yaml"));
+            candidates.Add(Path.Combine(AppContext.BaseDirectory, "evaluation-scenarios.mcp.yaml"));
 
             _yamlPath = null;
             foreach (var candidate in candidates)
             {
-                var normalized = Path.GetFullPath(candidate);
-                if (File.Exists(normalized))
+                try
                 {
-                    _yamlPath = normalized;
-                    break;
+                    var normalized = Path.GetFullPath(candidate);
+                    if (File.Exists(normalized))
+                    {
+                        _yamlPath = normalized;
+                        break;
+                    }
+                }
+                catch
+                {
+                    // Skip invalid paths
                 }
             }
 
             if (_yamlPath == null)
             {
-                _yamlPath = candidates[0]; // fallback to first candidate for error reporting
-                Console.WriteLine($"[WARN] EvaluationScenario file not found. Tried:");
+                // Fallback to first candidate for error reporting
+                _yamlPath = candidates.FirstOrDefault() ?? "evaluation-scenarios.mcp.yaml";
+                Console.WriteLine($"[WARN] EvaluationScenario YAML file not found. Candidates:");
                 foreach (var c in candidates)
                 {
-                    Console.WriteLine($"  - {Path.GetFullPath(c)}");
+                    try
+                    {
+                        var full = Path.GetFullPath(c);
+                        Console.WriteLine($"       {full}");
+                    }
+                    catch
+                    {
+                        Console.WriteLine($"       {c}");
+                    }
                 }
             }
 
