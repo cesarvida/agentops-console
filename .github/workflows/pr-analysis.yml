@@ -1,0 +1,77 @@
+name: PR Analysis
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore AgentOps.Console.sln
+
+      - name: Build
+        run: dotnet build AgentOps.Console.sln --configuration Release --no-restore
+
+      - name: Run AgentOps PR analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "Running AgentOps PR analysis"
+          printf "8\n$OWNER\n$REPO\n$PR_NUMBER\n" | dotnet run --project src/AgentOps.CLI/AgentOps.CLI.csproj
+
+      - name: Publish findings as PR comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = 'data/evaluations';
+            if (!fs.existsSync(path)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: 'AgentOps: No evaluation report generated for this PR.'
+              });
+            } else {
+              const files = fs.readdirSync(path).filter(f => f.startsWith('evaluation_')).sort((a,b) => {
+                return fs.statSync(path + '/' + b).mtime - fs.statSync(path + '/' + a).mtime;
+              });
+              if (files.length === 0) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.pull_request.number,
+                  body: 'AgentOps: No evaluation report generated for this PR.'
+                });
+              } else {
+                const latest = path + '/' + files[0];
+                const report = JSON.parse(fs.readFileSync(latest, 'utf8'));
+                const scores = `Security: ${report.Metrics?.SecurityScore ?? 'N/A'} | Compliance: ${report.Metrics?.ComplianceScore ?? 'N/A'} | Consistency: ${report.Metrics?.ConsistencyScore ?? 'N/A'} | Combined: ${report.Metrics?.CombinedQualityScore ?? 'N/A'}`;
+                const findings = (report.Findings || []).map(f => `- [${f.Severity}] ${f.Summary}`).join('\n') || 'No findings.';
+                const body = `## AgentOps PR Analysis\n\n**Scores:** ${scores}\n\n**Findings:**\n${findings}\n\n_This comment was posted by the AgentOps automated analyzer._`;
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.pull_request.number,
+                  body
+                });
+              }
+            }
