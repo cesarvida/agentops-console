@@ -104,6 +104,9 @@ public sealed class AnalyzePullRequestCommand
                     DateTime.UtcNow,
                     "1.0"
                 );
+                // Persist the temporary agent so it can be found by the evaluator
+                await _agentRepo.SaveAsync(codeReviewer);
+                Console.WriteLine("✅ Temporary agent created and saved.");
             }
 
             // Evaluate the PR diff using existing analyzers (handler orchestrates secret/danger/dep analyzers)
