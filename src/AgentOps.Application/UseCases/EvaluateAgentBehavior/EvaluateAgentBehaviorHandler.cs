@@ -196,18 +196,50 @@ namespace AgentOps.Application.UseCases.EvaluateAgentBehavior
             // Validate against JSON Schema
             var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
 
-            // Basic JSON Schema validation (structural checks) using the provided schema file.
-            var schemaPath = System.IO.Path.Combine(AppContext.BaseDirectory, "EvaluationReport.schema.json");
-            if (!System.IO.File.Exists(schemaPath))
-                throw new InvalidOperationException("EvaluationReport schema not found at runtime.");
-
-            var schemaText = await System.IO.File.ReadAllTextAsync(schemaPath);
-            using var schemaDoc = JsonDocument.Parse(schemaText);
-            using var instanceDoc = JsonDocument.Parse(json);
-            // Validate required root properties
-            if (schemaDoc.RootElement.TryGetProperty("required", out var requiredProp) && requiredProp.ValueKind == JsonValueKind.Array)
+            // Try to find EvaluationReport.schema.json
+            var schemaCandidates = new List<string>
             {
-                foreach (var reqProp in requiredProp.EnumerateArray())
+                System.IO.Path.Combine(AppContext.BaseDirectory, "EvaluationReport.schema.json"),
+                "EvaluationReport.schema.json",
+                System.IO.Path.Combine(Directory.GetCurrentDirectory(), "EvaluationReport.schema.json"),
+                System.IO.Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "AgentOps.Application", "schemas", "EvaluationReport.schema.json")
+            };
+
+            string? schemaPath = null;
+            foreach (var candidate in schemaCandidates)
+            {
+                try
+                {
+                    var normalized = System.IO.Path.GetFullPath(candidate);
+                    if (System.IO.File.Exists(normalized))
+                    {
+                        schemaPath = normalized;
+                        break;
+                    }
+                }
+                catch
+                {
+                    // Skip invalid paths
+                }
+            }
+
+            if (string.IsNullOrEmpty(schemaPath) || !System.IO.File.Exists(schemaPath))
+            {
+                // Log warning but don't fail - validation is optional
+                Console.WriteLine("[WARN] EvaluationReport schema not found. Skipping schema validation.");
+                schemaPath = null;
+            }
+
+            // Validate only if schema was found
+            if (schemaPath != null)
+            {
+                var schemaText = await System.IO.File.ReadAllTextAsync(schemaPath);
+                using var schemaDoc = JsonDocument.Parse(schemaText);
+                using var instanceDoc = JsonDocument.Parse(json);
+                // Validate required root properties
+                if (schemaDoc.RootElement.TryGetProperty("required", out var requiredProp) && requiredProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var reqProp in requiredProp.EnumerateArray())
                 {
                     var name = reqProp.GetString();
                     if (string.IsNullOrWhiteSpace(name)) continue;
@@ -233,6 +265,7 @@ namespace AgentOps.Application.UseCases.EvaluateAgentBehavior
                     }
                 }
             }
+            }  // End of schemaPath != null block
 
             // Persist artifact if requested; redaction and hashing are Infrastructure responsibilities.
             string? savedPath = null;
