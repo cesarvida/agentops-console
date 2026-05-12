@@ -1,0 +1,11 @@
+name: BadTestAgent
+version: "dev"                    # violacion: version invalida
+# owner no definido              # violacion: sin owner
+
+actions:
+  - read_code
+  - push_to_main                 # violacion: accion PROHIBIDA
+  - delete_database              # violacion: accion PROHIBIDA
+  - execute_code                 # violacion: accion PROHIBIDA
+
+# audit no configurado           # violacion: sin audit logging
