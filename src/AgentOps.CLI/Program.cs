@@ -13,7 +13,19 @@ using AgentOps.Application.Governance;
 
 // Check if running in CI/non-interactive mode for PR analysis
 bool isCIPRAnalysis = args.Length >= 4 && args[0] == "analyze-pr";
-bool isValidateAgent = args.Length >= 3 && args[0] == "validate-agent";
+bool isValidateAgent = args.Length >= 2 && args[0] == "validate-agent";
+
+// Parse optional --post-comment flags for validate-agent mode
+bool postComment = args.Contains("--post-comment");
+int prNumberArg = 0;
+string prOwnerArg = string.Empty;
+string prRepoArg = string.Empty;
+for (int i = 0; i < args.Length - 1; i++)
+{
+    if (args[i] == "--pr"    && int.TryParse(args[i + 1], out int pn)) prNumberArg = pn;
+    if (args[i] == "--owner")  prOwnerArg = args[i + 1];
+    if (args[i] == "--repo")   prRepoArg  = args[i + 1];
+}
 
 var host = Host.CreateDefaultBuilder(args)
 	.ConfigureServices((context, services) =>
@@ -196,6 +208,22 @@ else if (isValidateAgent && args.Length >= 2)
 		var command = new ValidateAgentCommand(args[1]);
 		var report = await handler.HandleAsync(command);
 		DisplayGovernanceReport(report, console);
+
+		// Post PR comment when --post-comment flag is present
+		if (postComment && prNumberArg > 0 && !string.IsNullOrEmpty(prOwnerArg) && !string.IsNullOrEmpty(prRepoArg))
+		{
+			try
+			{
+				var commentPoster = host.Services.GetRequiredService<AgentOps.Application.Interfaces.ICommentPoster>();
+				await commentPoster.PostGovernanceReportAsync(prOwnerArg, prRepoArg, prNumberArg, report);
+				console.WriteLine($"✅ Governance report posted to PR #{prNumberArg} ({prOwnerArg}/{prRepoArg})");
+			}
+			catch (Exception ex)
+			{
+				// Graceful fallback — don't fail the CI step if comment posting fails
+				console.WriteLine($"[WARN] Could not post PR comment: {ex.Message}");
+			}
+		}
 	}
 	catch (Exception ex)
 	{

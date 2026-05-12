@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using AgentOps.Application.Interfaces;
 using AgentOps.Application.UseCases.EvaluateAgentBehavior.Models;
+using AgentOps.Core.Governance;
 using AgentOps.GitHub;
 
 namespace AgentOps.Infrastructure.GitHub
@@ -49,6 +50,30 @@ namespace AgentOps.Infrastructure.GitHub
             {
                 // Log but don't throw - comment posting should not block the analysis flow
                 Console.WriteLine($"[WARN] Failed to post analysis comment: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Posts a governance validation report as a PR comment. Always posts regardless of score.
+        /// Fails gracefully if API call fails.
+        /// </summary>
+        public async Task PostGovernanceReportAsync(string owner, string repo, int prNumber, GovernanceReport report)
+        {
+            if (string.IsNullOrWhiteSpace(owner) || string.IsNullOrWhiteSpace(repo))
+                throw new ArgumentException("Owner and repo must be specified");
+
+            if (report == null)
+                throw new ArgumentNullException(nameof(report));
+
+            try
+            {
+                string comment = report.ToMarkdownComment();
+                await PostCommentAsync(owner, repo, prNumber, comment);
+            }
+            catch (Exception ex)
+            {
+                // Graceful fallback — comment failure must not block the workflow exit code
+                Console.WriteLine($"[WARN] Failed to post governance report comment: {ex.Message}");
             }
         }
 

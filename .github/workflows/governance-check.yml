@@ -1,0 +1,71 @@
+name: Agent Governance Check
+
+on:
+  pull_request:
+    paths:
+      - 'data/agent-definitions/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore
+
+      - name: Find changed agent definitions
+        id: changed-agents
+        run: |
+          # Ensure main is available for diff
+          git fetch origin main || true
+          git diff --name-only origin/main...HEAD | grep 'data/agent-definitions/.*\.yaml' > changed_agents.txt || true
+          echo "Changed agents:"
+          cat changed_agents.txt || true
+          echo "count=$(wc -l < changed_agents.txt)" >> $GITHUB_OUTPUT
+
+      - name: Validate changed agents
+        if: steps.changed-agents.outputs.count != '0'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          mkdir -p outputs || true
+          while IFS= read -r agent_file; do
+            if [ -f "$agent_file" ]; then
+              echo "Validating: $agent_file"
+              dotnet run --project src/AgentOps.CLI -- \
+                validate-agent "$agent_file" \
+                --post-comment \
+                --pr $PR_NUMBER \
+                --owner $REPO_OWNER \
+                --repo $REPO_NAME || true
+            fi
+          done < changed_agents.txt
+
+      - name: Upload governance reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: governance-reports
+          path: outputs/governance-*.json
+          if-no-files-found: ignore

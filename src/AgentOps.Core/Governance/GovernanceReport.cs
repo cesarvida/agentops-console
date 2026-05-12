@@ -48,11 +48,6 @@ namespace AgentOps.Core.Governance
         {
             var sb = new StringBuilder();
 
-            // Header
-            sb.AppendLine("## 🛡️ AgentOps Governance Report");
-            sb.AppendLine();
-
-            // Status line with emoji
             string statusEmoji = FinalStatus switch
             {
                 "APPROVED" => "✅",
@@ -61,80 +56,70 @@ namespace AgentOps.Core.Governance
                 _ => "❓"
             };
 
-            sb.AppendLine($"**Status:** {FinalStatus} {statusEmoji}");
-            sb.AppendLine($"**Agent:** {AgentName} v{AgentVersion}");
-            sb.AppendLine($"**Governance Score:** {GovernanceScore}/100");
+            // Header
+            sb.AppendLine("## 🛡️ AgentOps Governance Report");
+            sb.AppendLine();
+            sb.AppendLine($"**Agente:** {AgentName} v{AgentVersion}  ");
+            sb.AppendLine($"**Estado:** {statusEmoji} {FinalStatus}  ");
+            sb.AppendLine($"**Governance Score:** {GovernanceScore}/100  ");
             sb.AppendLine();
 
-            // Violations summary
-            sb.AppendLine("### Validation Results");
+            // Rules table
+            sb.AppendLine("### Reglas evaluadas");
             sb.AppendLine();
-            sb.AppendLine($"- **Rules Passed:** {RuleResults.Count(r => r.IsCompliant)}/{RuleResults.Count}");
-            sb.AppendLine($"- **Critical Violations:** {CriticalViolations}");
-            sb.AppendLine($"- **Warnings:** {WarningViolations}");
-            sb.AppendLine();
+            sb.AppendLine("| Regla | Severidad | Estado |");
+            sb.AppendLine("|-------|-----------|--------|");
 
-            // Details by rule
-            if (RuleResults.Any(r => !r.IsCompliant))
+            foreach (var rule in RuleResults)
             {
-                sb.AppendLine("### Rule Violations");
-                sb.AppendLine();
-
-                foreach (var rule in RuleResults.Where(r => !r.IsCompliant))
+                string severityIcon = rule.Severity switch
                 {
-                    string icon = rule.Severity switch
-                    {
-                        RuleSeverity.Critical => "🔴",
-                        RuleSeverity.Warning => "🟡",
-                        RuleSeverity.Info => "ℹ️",
-                        _ => "❓"
-                    };
+                    RuleSeverity.Critical => "🔴 Critical",
+                    RuleSeverity.Warning  => "🟡 Warning",
+                    _                     => "ℹ️ Info"
+                };
+                string stateIcon = rule.IsCompliant
+                    ? (rule.Severity == RuleSeverity.Warning ? "✅ Pass" : "✅ Pass")
+                    : (rule.Severity == RuleSeverity.Warning ? "⚠️ Warn" : "❌ Fail");
 
-                    sb.AppendLine($"{icon} **{rule.RuleName}** ({rule.Severity})");
-
-                    if (rule.Violations.Any())
-                    {
-                        foreach (var violation in rule.Violations)
-                        {
-                            sb.AppendLine($"  - {violation}");
-                        }
-                    }
-
-                    if (rule.Recommendations.Any())
-                    {
-                        sb.AppendLine($"  **Recommendations:**");
-                        foreach (var recommendation in rule.Recommendations)
-                        {
-                            sb.AppendLine($"  - {recommendation}");
-                        }
-                    }
-
-                    sb.AppendLine();
-                }
+                sb.AppendLine($"| {rule.RuleName} | {severityIcon} | {stateIcon} |");
             }
-            else
+
+            sb.AppendLine();
+
+            // Violations section (only when there are failures)
+            var failedRules = RuleResults.Where(r => !r.IsCompliant).ToList();
+            if (failedRules.Any())
             {
-                sb.AppendLine("### Validation Status");
-                sb.AppendLine("✅ Agent passed all governance rules!");
+                sb.AppendLine("### ❌ Violaciones encontradas");
+                sb.AppendLine();
+                foreach (var rule in failedRules)
+                {
+                    foreach (var violation in rule.Violations)
+                        sb.AppendLine($"- **{rule.RuleName}**: {violation}");
+                    foreach (var rec in rule.Recommendations)
+                        sb.AppendLine($"  - 💡 {rec}");
+                }
                 sb.AppendLine();
             }
 
-            // Footer with verdict
+            // Verdict footer
             if (FinalStatus == "BLOCKED")
             {
-                sb.AppendLine("> ⛔ This PR is **BLOCKED**. Resolve all critical violations before resubmitting.");
+                sb.AppendLine("> ⛔ Este agente tiene violaciones críticas y NO puede desplegarse.");
+                sb.AppendLine("> Corrige las violaciones antes de mergear este PR.");
             }
             else if (FinalStatus == "REVIEW")
             {
-                sb.AppendLine("> ⚠️ This PR requires **manual review**. Address the warnings above.");
+                sb.AppendLine("> ⚠️ Este agente necesita revisión humana antes de desplegarse.");
             }
             else if (FinalStatus == "APPROVED")
             {
-                sb.AppendLine("> ✅ This agent complies with governance rules and may be deployed.");
+                sb.AppendLine("> ✅ Este agente cumple todas las reglas de governance.");
             }
 
             sb.AppendLine();
-            sb.AppendLine("*Generated by AgentOps Governance Engine*");
+            sb.AppendLine("*Generado por AgentOps Governance Engine*");
 
             return sb.ToString();
         }

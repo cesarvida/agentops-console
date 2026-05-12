@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using AgentOps.Core.Entities;
 using AgentOps.Core.Governance;
@@ -62,7 +64,42 @@ namespace AgentOps.Application.Governance
             // Run governance evaluation
             var report = await _engine.EvaluateAsync(agent);
 
+            // Persist JSON report to outputs/ directory
+            await SaveReportAsJsonAsync(report);
+
             return report;
+        }
+
+        /// <summary>
+        /// Saves the governance report as a JSON file in the outputs/ directory.
+        /// </summary>
+        private async Task SaveReportAsJsonAsync(GovernanceReport report)
+        {
+            try
+            {
+                const string outputDir = "outputs";
+                Directory.CreateDirectory(outputDir);
+
+                string safeId = string.IsNullOrWhiteSpace(report.AgentId)
+                    ? "unknown"
+                    : string.Concat(report.AgentId.Split(Path.GetInvalidFileNameChars()));
+                string timestamp = report.EvaluatedAt.ToString("yyyyMMddHHmmss");
+                string fileName = $"governance-{safeId}-{timestamp}.json";
+                string filePath = Path.Combine(outputDir, fileName);
+
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    Converters = { new JsonStringEnumConverter() }
+                };
+                string json = JsonSerializer.Serialize(report, options);
+                await File.WriteAllTextAsync(filePath, json);
+            }
+            catch (Exception ex)
+            {
+                // Non-critical — don't fail the evaluation if saving the report fails
+                Console.WriteLine($"[WARN] Failed to save governance report JSON: {ex.Message}");
+            }
         }
 
         /// <summary>
