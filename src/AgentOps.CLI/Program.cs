@@ -7,9 +7,13 @@ using AgentOps.CLI.Options;
 using AgentOps.Application.UseCases.CreateAgentDefinition;
 using AgentOps.Application.UseCases.ViewAuditTrail;
 using AgentOps.Infrastructure.Persistence;
+using AgentOps.Core.Governance;
+using AgentOps.Core.Governance.Rules;
+using AgentOps.Application.Governance;
 
 // Check if running in CI/non-interactive mode for PR analysis
 bool isCIPRAnalysis = args.Length >= 4 && args[0] == "analyze-pr";
+bool isValidateAgent = args.Length >= 3 && args[0] == "validate-agent";
 
 var host = Host.CreateDefaultBuilder(args)
 	.ConfigureServices((context, services) =>
@@ -48,6 +52,14 @@ var host = Host.CreateDefaultBuilder(args)
 				sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AgentOps.Infrastructure.Persistence.FileAuditTrailReader>>()));
 		services.AddSingleton<ViewAuditTrailHandler>();
 		services.AddSingleton<ViewAuditTrailCommand>();
+		// Register governance rules and engine
+		services.AddSingleton<IGovernanceRule, AllowedActionsRule>();
+		services.AddSingleton<IGovernanceRule, ForbiddenActionsRule>();
+		services.AddSingleton<IGovernanceRule, AuditLoggingRule>();
+		services.AddSingleton<IGovernanceRule, OwnerDefinedRule>();
+		services.AddSingleton<IGovernanceRule, VersionDefinedRule>();
+		services.AddSingleton<GovernanceRuleEngine>();
+		services.AddSingleton<ValidateAgentCommandHandler>();
 		// Register security rules and analyzer for deterministic checks
 		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.PromptInjectionRule>();
 		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.ToolAbuseRule>();
@@ -176,6 +188,20 @@ if (isCIPRAnalysis && args.Length >= 4)
 		console.WriteLine($"❌ Error during PR analysis: {ex.Message}");
 	}
 }
+else if (isValidateAgent && args.Length >= 2)
+{
+	var handler = host.Services.GetRequiredService<ValidateAgentCommandHandler>();
+	try
+	{
+		var command = new ValidateAgentCommand(args[1]);
+		var report = await handler.HandleAsync(command);
+		DisplayGovernanceReport(report, console);
+	}
+	catch (Exception ex)
+	{
+		console.WriteLine($"❌ Error validating agent: {ex.Message}");
+	}
+}
 else
 {
 	// Interactive menu mode
@@ -187,6 +213,7 @@ else
 	console.WriteLine("6) Run Code Review (simulated)");
 	console.WriteLine("7) Run Compliance Check (simulated)");
 	console.WriteLine("8) Analyze GitHub PR (real PR from GitHub)");
+	console.WriteLine("9) Validate Agent Governance (YAML)");
 	console.WriteLine("");
 	console.WriteLine("Select option: ");
 	var opt = Console.ReadLine();
@@ -236,6 +263,27 @@ else
 			await analyzePRCmd.ExecuteAsync();
 		}
 	}
+	else if (opt == "9")
+	{
+		console.WriteLine("Enter path to agent YAML file: ");
+		var yamlPath = Console.ReadLine() ?? "";
+		if (!string.IsNullOrWhiteSpace(yamlPath))
+		{
+			try
+			{
+				var handler = host.Services.GetRequiredService<ValidateAgentCommandHandler>();
+				var command = new ValidateAgentCommand(yamlPath);
+				var report = await handler.HandleAsync(command);
+				
+				// Display report in console
+				DisplayGovernanceReport(report, console);
+			}
+			catch (Exception ex)
+			{
+				console.WriteLine($"❌ Error validating agent: {ex.Message}");
+			}
+		}
+	}
 	else
 	{
 		console.WriteLine("Exiting AgentOps Console. Goodbye.");
@@ -249,6 +297,53 @@ System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(paths.AuditP
 System.IO.Directory.CreateDirectory(paths.EvaluationsPath);
 
 await host.StopAsync();
+
+// Display governance report in console
+void DisplayGovernanceReport(AgentOps.Core.Governance.GovernanceReport report, IConsoleWriter console)
+{
+	string statusEmoji = report.FinalStatus switch
+	{
+		"APPROVED" => "✅",
+		"REVIEW" => "⚠️",
+		"BLOCKED" => "❌",
+		_ => "❓"
+	};
+
+	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+	console.WriteLine("   Governance Validation Report");
+	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+	console.WriteLine($"Agent: {report.AgentName} v{report.AgentVersion}");
+	console.WriteLine($"Status: {report.FinalStatus} {statusEmoji}");
+	console.WriteLine($"Governance Score: {report.GovernanceScore}/100");
+	console.WriteLine($"Critical Violations: {report.CriticalViolations}");
+	console.WriteLine($"Warnings: {report.WarningViolations}");
+	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+	if (report.RuleResults.Any(r => !r.IsCompliant))
+	{
+		console.WriteLine("Violations:");
+		foreach (var rule in report.RuleResults.Where(r => !r.IsCompliant))
+		{
+			string icon = rule.Severity switch
+			{
+				AgentOps.Core.Governance.RuleSeverity.Critical => "🔴",
+				AgentOps.Core.Governance.RuleSeverity.Warning => "🟡",
+				_ => "ℹ️"
+			};
+			console.WriteLine($"\n{icon} {rule.RuleName} ({rule.Severity})");
+			foreach (var violation in rule.Violations)
+			{
+				console.WriteLine($"  - {violation}");
+			}
+		}
+	}
+	else
+	{
+		console.WriteLine("✅ Agent passed all governance rules!");
+	}
+
+	console.WriteLine("");
+}
 
 // SystemClock implementation
 public class SystemClock : IClock

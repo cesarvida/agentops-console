@@ -1,0 +1,20 @@
+Serie de pruebas para C:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Debug\net10.0\AgentOps.Application.Tests.dll (.NETCoreApp,Version=v10.0)
+Serie de pruebas para C:\Users\cvida\source\framework\app_console\tests\AgentOps.Security.Tests\bin\Debug\net10.0\AgentOps.Security.Tests.dll (.NETCoreApp,Version=v10.0)
+Serie de pruebas para C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Debug\net10.0\AgentOps.Infrastructure.Tests.dll (.NETCoreApp,Version=v10.0)
+Serie de pruebas para C:\Users\cvida\source\framework\app_console\tests\AgentOps.Core.Tests\bin\Debug\net10.0\AgentOps.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+Serie de pruebas para C:\Users\cvida\source\framework\app_console\tests\AgentOps.CLI.Tests\bin\Debug\net10.0\AgentOps.CLI.Tests.dll (.NETCoreApp,Version=v10.0)
+1 archivos de prueba en total coincidieron con el patr├│n especificado.
+1 archivos de prueba en total coincidieron con el patr├│n especificado.
+1 archivos de prueba en total coincidieron con el patr├│n especificado.
+1 archivos de prueba en total coincidieron con el patr├│n especificado.
+1 archivos de prueba en total coincidieron con el patr├│n especificado.
+
+Correctas! - Con error:     0, Superado:    10, Omitido:     0, Total:    10, Duraci├│n: 359 ms - AgentOps.Security.Tests.dll (net10.0)
+
+Correctas! - Con error:     0, Superado:     3, Omitido:     0, Total:     3, Duraci├│n: 71 ms - AgentOps.Core.Tests.dll (net10.0)
+No hay ninguna prueba disponible en C:\Users\cvida\source\framework\app_console\tests\AgentOps.CLI.Tests\bin\Debug\net10.0\AgentOps.CLI.Tests.dll. Aseg├║rese de que los detectores y ejecutores de pruebas est├ín registrados y de que la configuraci├│n de versi├│n de la plataforma y de Framework es correcta y vuelva a intentarlo.
+
+
+Correctas! - Con error:     0, Superado:    12, Omitido:     0, Total:    12, Duraci├│n: 1 s - AgentOps.Infrastructure.Tests.dll (net10.0)
+
+Correctas! - Con error:     0, Superado:    17, Omitido:     0, Total:    17, Duraci├│n: 1 s - AgentOps.Application.Tests.dll (net10.0)

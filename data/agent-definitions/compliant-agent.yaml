@@ -1,0 +1,32 @@
+id: code-review-agent
+name: Code Review Agent
+version: 1.2.3
+description: Agent that reviews code for security and quality issues
+owner: team-backend
+
+agent:
+  name: Code Review Agent
+  version: 1.2.3
+  owner: team-backend
+  description: Performs comprehensive code reviews
+  
+governance:
+  allowed_actions:
+    - read_code
+    - read_files
+    - post_comment
+    - create_report
+    - request_changes
+  audit:
+    log_all_actions: true
+    retention_days: 90
+
+rules:
+  - enforce_code_style
+  - check_security_issues
+  - verify_test_coverage
+
+tools:
+  - github_api
+  - code_analysis
+  - linter

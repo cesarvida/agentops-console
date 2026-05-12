@@ -1,0 +1,27 @@
+id: bad-agent
+name: Bad Agent
+version: latest
+description: Agent with governance violations
+owner: 
+
+agent:
+  name: Bad Agent
+  version: latest
+  owner: 
+  description: Agent with security and governance issues
+  
+governance:
+  allowed_actions:
+    - read_code
+    - push_to_main
+    - delete_files
+    - access_secrets
+  audit:
+    log_all_actions: false
+    retention_days: 7
+
+rules:
+  - skip_security_checks
+
+tools:
+  - unrestricted_access

@@ -56,5 +56,7 @@ namespace AgentOps.Core.Entities
         public double TemperatureDefault { get; set; }
         public bool AllowHallucination { get; set; }
         public bool RequiresAudit { get; set; }
+        public string Owner { get; set; } = string.Empty;
+        public List<string> AllowedActions { get; set; } = new();
     }
 }
