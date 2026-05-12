@@ -1,0 +1,76 @@
+{
+  "AgentId": "de11efbd-f126-4f2a-94c9-d4058e310df1",
+  "AgentName": "BadTestAgent",
+  "AgentVersion": "dev",
+  "IsCompliant": false,
+  "GovernanceScore": 5,
+  "FinalStatus": "BLOCKED",
+  "RuleResults": [
+    {
+      "IsCompliant": false,
+      "RuleName": "Allowed Actions Whitelist",
+      "Severity": "Critical",
+      "Violations": [
+        "Action \u0027push_to_main\u0027 is not in the allowed whitelist",
+        "Action \u0027delete_database\u0027 is not in the allowed whitelist",
+        "Action \u0027execute_code\u0027 is not in the allowed whitelist"
+      ],
+      "Recommendations": [
+        "Remove or replace with one of these actions: read_code, post_comment, request_changes, read_files, read_logs, send_notification, create_report"
+      ]
+    },
+    {
+      "IsCompliant": false,
+      "RuleName": "Forbidden Actions Block",
+      "Severity": "Critical",
+      "Violations": [
+        "Action \u0027push_to_main\u0027 is strictly forbidden",
+        "Action \u0027delete_database\u0027 is strictly forbidden",
+        "Action \u0027execute_code\u0027 is strictly forbidden"
+      ],
+      "Recommendations": [
+        "Remove all forbidden actions from the agent definition",
+        "Forbidden actions: push_to_main, delete_files, delete_database, access_secrets, modify_permissions, execute_code, bypass_authentication"
+      ]
+    },
+    {
+      "IsCompliant": false,
+      "RuleName": "Audit Logging Required",
+      "Severity": "Critical",
+      "Violations": [
+        "Audit logging is not configured (RequiresAudit must be true)"
+      ],
+      "Recommendations": [
+        "Set RequiresAudit = true in agent configuration",
+        "Ensure audit.log_all_actions = true",
+        "Set audit.retention_days \u003E= 30"
+      ]
+    },
+    {
+      "IsCompliant": false,
+      "RuleName": "Owner Defined",
+      "Severity": "Warning",
+      "Violations": [
+        "No owner is defined for this agent"
+      ],
+      "Recommendations": [
+        "Add an owner field in the agent definition YAML",
+        "Example: owner: \u0027team-backend\u0027 or owner: \u0027alice@company.com\u0027"
+      ]
+    },
+    {
+      "IsCompliant": false,
+      "RuleName": "Version Defined",
+      "Severity": "Warning",
+      "Violations": [
+        "Invalid version format: \u0027dev\u0027 is not allowed"
+      ],
+      "Recommendations": [
+        "Use semantic versioning: 1.0.0, 1.2.3, etc."
+      ]
+    }
+  ],
+  "CriticalViolations": 3,
+  "WarningViolations": 2,
+  "EvaluatedAt": "2026-05-12T08:31:04.349439Z"
+}

@@ -4,16 +4,19 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using AgentOps.CLI;
 using AgentOps.CLI.Options;
+using AgentOps.CLI.Dashboard;
 using AgentOps.Application.UseCases.CreateAgentDefinition;
 using AgentOps.Application.UseCases.ViewAuditTrail;
+using AgentOps.Application.Dashboard;
 using AgentOps.Infrastructure.Persistence;
 using AgentOps.Core.Governance;
 using AgentOps.Core.Governance.Rules;
 using AgentOps.Application.Governance;
 
 // Check if running in CI/non-interactive mode for PR analysis
-bool isCIPRAnalysis = args.Length >= 4 && args[0] == "analyze-pr";
-bool isValidateAgent = args.Length >= 2 && args[0] == "validate-agent";
+bool isCIPRAnalysis   = args.Length >= 4 && args[0] == "analyze-pr";
+bool isValidateAgent  = args.Length >= 2 && args[0] == "validate-agent";
+bool isDashboard      = args.Length >= 1 && args[0] == "dashboard";
 
 // Parse optional --post-comment flags for validate-agent mode
 bool postComment = args.Contains("--post-comment");
@@ -93,6 +96,11 @@ var host = Host.CreateDefaultBuilder(args)
 		services.AddSingleton<AgentOps.Application.Interfaces.ICommentPoster>(sp =>
 			new AgentOps.Infrastructure.GitHub.GitHubCommentPoster(sp.GetRequiredService<AgentOps.GitHub.GitHubHttpClient>()));
 		services.AddSingleton<AgentOps.CLI.Commands.AnalyzePullRequestCommand>();
+		// Dashboard
+		services.AddScoped<AgentOps.Application.Interfaces.IAgentFetcher>(sp =>
+			new AgentOps.Infrastructure.GitHub.GitHubAgentFetcher(sp.GetRequiredService<AgentOps.GitHub.GitHubHttpClient>()));
+		services.AddScoped<GetDashboardQueryHandler>();
+		services.AddScoped<DashboardRenderer>();
 		
 		// Register optional LLM semantic analyzer (only if Azure OpenAI is configured)
 		var azureOpenAIOptions = new AzureOpenAIOptions();
@@ -230,6 +238,26 @@ else if (isValidateAgent && args.Length >= 2)
 		console.WriteLine($"❌ Error validating agent: {ex.Message}");
 	}
 }
+else if (isDashboard)
+{
+	// Resolve owner/repo: --owner / --repo flags OR defaults to cesarvida/agentops-console
+	string dashOwner = !string.IsNullOrEmpty(prOwnerArg) ? prOwnerArg : "cesarvida";
+	string dashRepo  = !string.IsNullOrEmpty(prRepoArg)  ? prRepoArg  : "agentops-console";
+
+	var dashboardHandler  = host.Services.GetRequiredService<GetDashboardQueryHandler>();
+	var dashboardRenderer = host.Services.GetRequiredService<DashboardRenderer>();
+
+	try
+	{
+		var query  = new GetDashboardQuery(dashOwner, dashRepo);
+		var result = await dashboardHandler.HandleAsync(query);
+		dashboardRenderer.Render(result);
+	}
+	catch (Exception ex)
+	{
+		console.WriteLine($"❌ Error loading dashboard: {ex.Message}");
+	}
+}
 else
 {
 	// Interactive menu mode
@@ -242,6 +270,7 @@ else
 	console.WriteLine("7) Run Compliance Check (simulated)");
 	console.WriteLine("8) Analyze GitHub PR (real PR from GitHub)");
 	console.WriteLine("9) Validate Agent Governance (YAML)");
+	console.WriteLine("10) 📊 Dashboard de agentes");
 	console.WriteLine("");
 	console.WriteLine("Select option: ");
 	var opt = Console.ReadLine();
@@ -310,6 +339,29 @@ else
 			{
 				console.WriteLine($"❌ Error validating agent: {ex.Message}");
 			}
+		}
+	}
+	else if (opt == "10")
+	{
+		console.WriteLine("Owner del repo (Enter para cesarvida): ");
+		var dashOwner = Console.ReadLine()?.Trim() ?? "";
+		if (string.IsNullOrEmpty(dashOwner)) dashOwner = "cesarvida";
+
+		console.WriteLine("Nombre del repo (Enter para agentops-console): ");
+		var dashRepo = Console.ReadLine()?.Trim() ?? "";
+		if (string.IsNullOrEmpty(dashRepo)) dashRepo = "agentops-console";
+
+		try
+		{
+			var dashboardHandler  = host.Services.GetRequiredService<GetDashboardQueryHandler>();
+			var dashboardRenderer = host.Services.GetRequiredService<DashboardRenderer>();
+			var query  = new GetDashboardQuery(dashOwner, dashRepo);
+			var result = await dashboardHandler.HandleAsync(query);
+			dashboardRenderer.Render(result);
+		}
+		catch (Exception ex)
+		{
+			console.WriteLine($"❌ Error loading dashboard: {ex.Message}");
 		}
 	}
 	else

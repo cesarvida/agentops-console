@@ -1,0 +1,2 @@
+{"AuditId":"aa814c1c-18b7-48dc-9d86-bed1dfdb34b5","TimestampUtc":"2026-05-12T08:26:28.2282021Z","Action":"CreateAgentDefinition","EntityType":"AgentDefinition","EntityId":"bcc4f402-06ea-432f-8316-27a3dbbb7ff5","Status":"Success","Details":"Agent \u0027Code Reviewer\u0027 created."}
+{"AuditId":"843ca1d1-4f06-4414-9179-758e01d8c183","TimestampUtc":"2026-05-12T08:26:28.266855Z","Action":"CreateAgentDefinition","EntityType":"AgentDefinition","EntityId":"84cf3f3c-30a5-42da-a432-52232fe3e79a","Status":"Success","Details":"Agent \u0027Compliance Checker\u0027 created."}

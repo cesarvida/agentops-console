@@ -1,0 +1,48 @@
+{
+  "AgentId": "code-review-agent",
+  "AgentName": "Code Review Agent",
+  "AgentVersion": "1.2.3",
+  "IsCompliant": true,
+  "GovernanceScore": 100,
+  "FinalStatus": "APPROVED",
+  "RuleResults": [
+    {
+      "IsCompliant": true,
+      "RuleName": "Allowed Actions Whitelist",
+      "Severity": "Critical",
+      "Violations": [],
+      "Recommendations": []
+    },
+    {
+      "IsCompliant": true,
+      "RuleName": "Forbidden Actions Block",
+      "Severity": "Critical",
+      "Violations": [],
+      "Recommendations": []
+    },
+    {
+      "IsCompliant": true,
+      "RuleName": "Audit Logging Required",
+      "Severity": "Critical",
+      "Violations": [],
+      "Recommendations": []
+    },
+    {
+      "IsCompliant": true,
+      "RuleName": "Owner Defined",
+      "Severity": "Warning",
+      "Violations": [],
+      "Recommendations": []
+    },
+    {
+      "IsCompliant": true,
+      "RuleName": "Version Defined",
+      "Severity": "Warning",
+      "Violations": [],
+      "Recommendations": []
+    }
+  ],
+  "CriticalViolations": 0,
+  "WarningViolations": 0,
+  "EvaluatedAt": "2026-05-12T08:30:49.8313913Z"
+}
