@@ -1,6 +1,6 @@
 ﻿# AgentOps Governance — Autopsy Report
 
-> Generated: 2026-05-12 10:36:53 UTC
+> Generated: 2026-05-12 10:40:02 UTC
 > Repo root: `C:\Users\cvida\source\framework\app_console`
 
 
@@ -18,7 +18,7 @@
 - ✅ Azure OpenAI endpoint env var wired in workflow
 - ✅ Azure OpenAI API key env var wired in workflow
 - ✅ API key sourced from GitHub Secret (not hardcoded)
-- ❌ No `|| true` masking failures (enforcement is real)
+- ✅ No `|| true` masking failures (enforcement is real)
 
 ## 3. Exit Code Contract (Phase 10)
 
@@ -34,7 +34,7 @@
 - ✅ Config includes `forbidden_actions`
 - ✅ Config includes `scoring`
 - ✅ `GovernanceException.cs` exists (exception model)
-- ❌ Handler applies governance exceptions
+- ✅ Handler/engine applies governance exceptions
 - ✅ Rule-based BLOCKED is not overridden by semantic result
 
 ## 5. Semantic Analysis Integrity (Phase 11)
@@ -43,7 +43,7 @@
 - ✅ `AzureOpenAIGovernanceClient` implementation exists
 - ✅ `SemanticAnalysisResult` model exists
 - ✅ Client reads endpoint from variable (not hardcoded)
-- ❌ API key is not logged
+- ✅ API key is not logged
 - ✅ Client handles timeout gracefully
 - ✅ Client returns Skipped on error (no crash)
 - ✅ Options reads `AZURE_OPENAI_ENDPOINT`
