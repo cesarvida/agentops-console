@@ -11,11 +11,11 @@ using AgentOps.Core.ValueObjects;
 namespace AgentOps.Application.Governance
 {
     /// <summary>
-    /// CQRS Command to validate an agent definition from a YAML file.
+    /// CQRS Command to validate an agent definition from a file (YAML or JSON).
     /// </summary>
     public class ValidateAgentCommand
     {
-        /// <summary>Path to the YAML file containing the agent definition.</summary>
+        /// <summary>Path to the agent definition file (supports .yaml, .yml, .json extensions).</summary>
         public string YamlPath { get; set; }
 
         public ValidateAgentCommand(string yamlPath)
@@ -29,12 +29,14 @@ namespace AgentOps.Application.Governance
     /// Optionally runs Azure OpenAI semantic analysis after the rule-based check
     /// when <see cref="IAgentSemanticAnalyzer"/> is provided and semantic analysis
     /// is enabled in the supplied <see cref="GovernanceConfig"/>.
+    /// 
+    /// Supports agent definitions in both YAML and JSON formats. The loader automatically
+    /// detects the format based on file extension (.yaml, .yml, .json).
     /// </summary>
     public class ValidateAgentCommandHandler
     {
         private readonly GovernanceRuleEngine       _engine;
         private readonly IAgentSemanticAnalyzer?    _semanticAnalyzer;
-        private readonly AgentYamlDeserializer      _yamlDeserializer = new();
 
         public ValidateAgentCommandHandler(
             GovernanceRuleEngine engine,
@@ -45,9 +47,9 @@ namespace AgentOps.Application.Governance
         }
 
         /// <summary>
-        /// Executes the validation of an agent definition from a YAML file.
+        /// Executes the validation of an agent definition from a file (YAML or JSON).
         /// </summary>
-        /// <param name="command">The validation command with YAML path.</param>
+        /// <param name="command">The validation command with file path.</param>
         /// <param name="config">
         /// Optional governance config.  When null the engine uses its default config
         /// and semantic analysis is skipped.
@@ -61,13 +63,15 @@ namespace AgentOps.Application.Governance
                 throw new ArgumentNullException(nameof(command));
 
             if (!File.Exists(command.YamlPath))
-                throw new FileNotFoundException($"Agent YAML file not found: {command.YamlPath}");
+                throw new FileNotFoundException($"Agent definition file not found: {command.YamlPath}");
 
-            var yaml  = await File.ReadAllTextAsync(command.YamlPath);
-            var agent = DeserializeAgentDefinition(yaml);
+            var agent = await AgentDefinitionLoader.LoadAsync(command.YamlPath);
 
             if (agent == null)
-                throw new InvalidOperationException("Failed to deserialize agent definition from YAML");
+                throw new InvalidOperationException("Failed to deserialize agent definition from file");
+
+            // Read the raw content for semantic analysis
+            var yaml = await File.ReadAllTextAsync(command.YamlPath);
 
             // ── 1. Rule-based governance evaluation ──────────────────────────
             var report = config != null
@@ -132,8 +136,5 @@ namespace AgentOps.Application.Governance
                 Console.WriteLine($"[WARN] Failed to save governance report JSON: {ex.Message}");
             }
         }
-
-        private AgentDefinition DeserializeAgentDefinition(string yaml)
-            => _yamlDeserializer.Deserialize(yaml);
     }
 }

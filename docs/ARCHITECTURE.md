@@ -5,10 +5,10 @@
 ## Overview
 
 AgentOps Console is a **governed agent registry** and **PR merge gate**.
-When a developer pushes a YAML agent definition and opens a pull request, a GitHub Actions workflow validates it against a rule engine and optionally a semantic AI reviewer. If the agent is BLOCKED, the merge is rejected at the branch-protection level.
+When a developer pushes an agent definition (YAML or JSON) and opens a pull request, a GitHub Actions workflow validates it against a rule engine and optionally a semantic AI reviewer. If the agent is BLOCKED, the merge is rejected at the branch-protection level.
 
 ```
-Developer pushes YAML
+Developer pushes YAML/JSON
         │
         ▼
 ┌──────────────────────────────────┐
@@ -108,8 +108,10 @@ Depends on Core, Agents.
 
 Key types:
 - `GovernanceRuleEngine` — Runs all registered rules against an agent. Applies `GovernanceException` downgrades. Computes `GovernanceScore` and `FinalStatus` (APPROVED/REVIEW/BLOCKED) based on `ScoringConfig` thresholds.
-- `ValidateAgentCommandHandler` — Orchestrates: deserialize YAML → run rule engine → optional semantic analysis → merge results → persist JSON report.
+- `ValidateAgentCommandHandler` — Orchestrates: load agent definition (YAML or JSON) → run rule engine → optional semantic analysis → merge results → persist JSON report.
+- `AgentDefinitionLoader` — Loads agent definitions from files. Supports `.yaml`, `.yml`, and `.json` extensions. Automatically detects format and dispatches to appropriate deserializer.
 - `AgentYamlDeserializer` — Parses agent YAML using YamlDotNet with CamelCase naming.
+- `AgentJsonDeserializer` — Parses agent JSON using System.Text.Json with snake_case property mapping.
 - `IAgentSemanticAnalyzer` — Interface for semantic analysis. Default implementation is `AzureOpenAIGovernanceClient`. A `FakeAgentSemanticAnalyzer` is available in `demo/` for testing without credentials.
 
 ### `AgentOps.Infrastructure` — External Dependencies Layer
@@ -126,13 +128,14 @@ Key types:
 
 Depends on all other src projects.
 
-The `validate-agent <file>` subcommand is the core of the enforcement pipeline:
+The `validate-agent <file>` subcommand is the core of the enforcement pipeline. It supports agent definition files in YAML (`.yaml`, `.yml`) or JSON (`.json`) format:
 1. Reads `data/governance-config.yaml` via `LocalGovernanceConfigReader`
-2. Builds `GovernanceRuleEngine` with all 8 rules
-3. Builds `AzureOpenAIGovernanceClient` if Azure env vars are set
-4. Calls `ValidateAgentCommandHandler.HandleAsync(command, config)`
-5. Displays the report
-6. Sets `Environment.ExitCode = 1` if `report.FinalStatus == "BLOCKED"`
+2. Loads agent definition via `AgentDefinitionLoader` (auto-detects YAML/JSON)
+3. Builds `GovernanceRuleEngine` with all 8 rules
+4. Builds `AzureOpenAIGovernanceClient` if Azure env vars are set
+5. Calls `ValidateAgentCommandHandler.HandleAsync(command, config)`
+6. Displays the report
+7. Sets `Environment.ExitCode = 1` if `report.FinalStatus == "BLOCKED"`
 
 ---
 
@@ -163,9 +166,96 @@ When the file is absent or unparseable, `GovernanceConfig.Default` is used (all 
 
 ---
 
+## Agent Definition Formats
+
+AgentOps Console supports agent definitions in both **YAML** and **JSON** formats. Both formats are validated identically by the governance rule engine; the format choice is purely a matter of preference.
+
+### YAML Format
+
+```yaml
+id: my-agent-001
+name: My Agent
+version: 1.0.0
+description: A description of at least 10 characters for the agent
+purpose: The purpose of this agent in the governance context
+owner: team-name
+actions:
+  - read_code
+  - post_comment
+rate_limit:
+  requests_per_minute: 60
+timeout_seconds: 30
+environments:
+  - development
+  - staging
+audit:
+  log_all_actions: true
+  retention_days: 90
+rules:
+  - rule_name_1
+  - rule_name_2
+tools:
+  - tool_name_1
+  - tool_name_2
+exceptions:
+  - rule: "Allowed Actions Whitelist"
+    reason: "Approved by security team for migration"
+    approved_by: "security-team"
+    expires_at: "2026-06-01T00:00:00Z"
+```
+
+### JSON Format
+
+```json
+{
+  "id": "my-agent-001",
+  "name": "My Agent",
+  "version": "1.0.0",
+  "description": "A description of at least 10 characters for the agent",
+  "purpose": "The purpose of this agent in the governance context",
+  "owner": "team-name",
+  "actions": [
+    "read_code",
+    "post_comment"
+  ],
+  "rate_limit": {
+    "requests_per_minute": 60
+  },
+  "timeout_seconds": 30,
+  "environments": [
+    "development",
+    "staging"
+  ],
+  "audit": {
+    "log_all_actions": true,
+    "retention_days": 90
+  },
+  "rules": [
+    "rule_name_1",
+    "rule_name_2"
+  ],
+  "tools": [
+    "tool_name_1",
+    "tool_name_2"
+  ],
+  "exceptions": [
+    {
+      "rule": "Allowed Actions Whitelist",
+      "reason": "Approved by security team for migration",
+      "approved_by": "security-team",
+      "expires_at": "2026-06-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+Both formats map to the same `AgentDefinition` model and produce identical governance evaluation results. The CLI `validate-agent` command auto-detects the format based on file extension (`.yaml`, `.yml`, or `.json`).
+
+---
+
 ## Exception System
 
-An agent YAML can declare governance exceptions for temporarily approved violations:
+An agent definition can declare governance exceptions for temporarily approved violations:
 
 ```yaml
 exceptions:
