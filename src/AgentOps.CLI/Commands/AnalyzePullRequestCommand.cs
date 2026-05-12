@@ -116,7 +116,10 @@ public sealed class AnalyzePullRequestCommand
                 ScenarioId = "code-review-security-suite-v1",
                 OperatorId = "cli",
                 Input = combinedDiff,
-                Options = new EvaluationOptions { PersistArtifacts = true, AnonymizeEvidence = true }
+                Options = new EvaluationOptions { PersistArtifacts = true, AnonymizeEvidence = true },
+                GitHubOwner = owner,
+                GitHubRepo = repo,
+                GitHubPRNumber = pr
             };
 
             var resp = await _evaluator.HandleAsync(req);

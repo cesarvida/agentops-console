@@ -10,6 +10,10 @@ namespace AgentOps.Application.UseCases.EvaluateAgentBehavior
         // Optional single test input (e.g. PR diff) to override scenario.TestVectors for this run
         public string? Input { get; set; }
         public string? OperatorId { get; set; }
+        // Optional GitHub context for posting comments
+        public string? GitHubOwner { get; set; }
+        public string? GitHubRepo { get; set; }
+        public int? GitHubPRNumber { get; set; }
     }
 
     public class EvaluationOptions

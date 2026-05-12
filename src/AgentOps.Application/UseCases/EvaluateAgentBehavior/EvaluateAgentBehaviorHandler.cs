@@ -8,6 +8,7 @@ using AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators;
 using AgentOps.Security.Interfaces;
 using AgentOps.Security.Models;
 using AgentOps.Core.ValueObjects;
+using AgentOps.Application.Interfaces;
 
 namespace AgentOps.Application.UseCases.EvaluateAgentBehavior
 {
@@ -18,19 +19,22 @@ namespace AgentOps.Application.UseCases.EvaluateAgentBehavior
         private readonly IAuditRepository _auditRepo;
         private readonly IEvaluationReportRepository? _reportRepo;
         private readonly ISecurityAnalyzer? _securityAnalyzer;
+        private readonly ICommentPoster? _commentPoster;
 
         public EvaluateAgentBehaviorHandler(
             IAgentDefinitionRepository agentRepo,
             IEvaluationScenarioRepository scenarioRepo,
             IAuditRepository auditRepo,
             IEvaluationReportRepository? reportRepo = null,
-            ISecurityAnalyzer? securityAnalyzer = null)
+            ISecurityAnalyzer? securityAnalyzer = null,
+            ICommentPoster? commentPoster = null)
         {
             _agentRepo = agentRepo;
             _scenarioRepo = scenarioRepo;
             _auditRepo = auditRepo;
             _reportRepo = reportRepo;
             _securityAnalyzer = securityAnalyzer;
+            _commentPoster = commentPoster;
         }
 
         public async Task<EvaluateAgentBehaviorResponse> HandleAsync(EvaluateAgentBehaviorRequest req)
@@ -287,6 +291,27 @@ namespace AgentOps.Application.UseCases.EvaluateAgentBehavior
                     RedactionApplied = true,
                     RetentionDays    = 365
                 });
+            }
+
+            // Post comment to GitHub PR if context is provided and comment poster is available
+            if (!string.IsNullOrWhiteSpace(req.GitHubOwner) && 
+                !string.IsNullOrWhiteSpace(req.GitHubRepo) && 
+                req.GitHubPRNumber.HasValue && 
+                _commentPoster != null)
+            {
+                try
+                {
+                    await _commentPoster.PostAnalysisCommentAsync(
+                        req.GitHubOwner, 
+                        req.GitHubRepo, 
+                        req.GitHubPRNumber.Value, 
+                        report);
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't throw - comment posting should not block the analysis flow
+                    Console.WriteLine($"[WARN] Failed to post analysis comment to GitHub: {ex.Message}");
+                }
             }
 
             // Write minimal MetricsSummary to audit log

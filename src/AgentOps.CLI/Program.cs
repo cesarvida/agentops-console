@@ -29,7 +29,14 @@ var host = Host.CreateDefaultBuilder(args)
 		// Evaluation report persistence
 		services.AddSingleton<AgentOps.Application.UseCases.EvaluateAgentBehavior.IEvaluationReportRepository>(sp =>
 			new AgentOps.Infrastructure.Persistence.FileEvaluationReportRepository(sp.GetRequiredService<DataPathsOptions>()));
-		services.AddSingleton<AgentOps.Application.UseCases.EvaluateAgentBehavior.EvaluateAgentBehaviorHandler>();
+		services.AddSingleton<AgentOps.Application.UseCases.EvaluateAgentBehavior.EvaluateAgentBehaviorHandler>(sp =>
+			new AgentOps.Application.UseCases.EvaluateAgentBehavior.EvaluateAgentBehaviorHandler(
+				sp.GetRequiredService<IAgentDefinitionRepository>(),
+				sp.GetRequiredService<AgentOps.Application.UseCases.EvaluateAgentBehavior.IEvaluationScenarioRepository>(),
+				sp.GetRequiredService<IAuditRepository>(),
+				sp.GetRequiredService<AgentOps.Application.UseCases.EvaluateAgentBehavior.IEvaluationReportRepository>(),
+				sp.GetRequiredService<AgentOps.Security.Interfaces.ISecurityAnalyzer>(),
+				sp.GetRequiredService<AgentOps.Application.Interfaces.ICommentPoster>()));
 		services.AddSingleton<AgentOps.CLI.EvaluateAgentBehaviorCommand>();
 		services.AddSingleton<CreateAgentDefinitionHandler>();
 		services.AddSingleton<CreateAgentDefinitionCommand>();
@@ -57,6 +64,10 @@ var host = Host.CreateDefaultBuilder(args)
 		// GitHub PR Analyzer
 		services.AddSingleton<AgentOps.GitHub.IGitHubPullRequestClient>(sp =>
 			new AgentOps.GitHub.GitHubPullRequestClient(Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? ""));
+		services.AddSingleton<AgentOps.GitHub.GitHubHttpClient>(sp =>
+			new AgentOps.GitHub.GitHubHttpClient(Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? ""));
+		services.AddSingleton<AgentOps.Application.Interfaces.ICommentPoster>(sp =>
+			new AgentOps.Infrastructure.GitHub.GitHubCommentPoster(sp.GetRequiredService<AgentOps.GitHub.GitHubHttpClient>()));
 		services.AddSingleton<AgentOps.CLI.Commands.AnalyzePullRequestCommand>();
 		
 		// Register optional LLM semantic analyzer (only if Azure OpenAI is configured)

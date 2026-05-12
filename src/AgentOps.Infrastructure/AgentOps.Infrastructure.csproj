@@ -4,6 +4,7 @@
     <ProjectReference Include="..\AgentOps.Core\AgentOps.Core.csproj" />
     <ProjectReference Include="..\AgentOps.Agents\AgentOps.Agents.csproj" />
     <ProjectReference Include="..\AgentOps.Application\AgentOps.Application.csproj" />
+    <ProjectReference Include="..\AgentOps.GitHub\AgentOps.GitHub.csproj" />
   </ItemGroup>
 
   <ItemGroup>
