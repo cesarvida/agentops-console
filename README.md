@@ -239,4 +239,33 @@ MIT
 
 ---
 
-**Version:** 0.2.0 | **Status:** Production Ready ✅
+## 🔒 Branch Protection & Required Status Checks
+
+The **AI Governance Check** workflow (`governance-check.yml`) enforces governance rules at the GitHub merge gate. When any agent definition file changes in a PR, the workflow validates it and blocks the merge if violations are critical.
+
+### How it works
+
+| Governance result | Workflow exit code | GitHub check status | Merge allowed? |
+|---|---|---|---|
+| `APPROVED` | `0` | ✅ success | Yes |
+| `REVIEW` | `0` | ✅ success | Yes (warning logged) |
+| `BLOCKED` | `1` | ❌ failure | **No** |
+
+### Enable branch protection on `main`
+
+1. Go to **Settings → Branches** in your GitHub repository.
+2. Click **Add branch protection rule** (or edit the existing rule for `main`).
+3. Enable **Require status checks to pass before merging**.
+4. In the search box, type `Governance Enforcement` and select the check.
+5. Enable **Require branches to be up to date before merging**.
+6. Click **Save changes**.
+
+> The Required Status Check name is `AI Governance Check / Governance Enforcement` — it appears automatically after the workflow runs at least once on a PR.
+
+### Verify the setup
+
+Open any PR that modifies a file under `data/agent-definitions/`. You should see the **AI Governance Check / Governance Enforcement** check in the PR checks list. If the agent is BLOCKED, the **Merge pull request** button will be disabled until violations are resolved.
+
+---
+
+**Version:** 0.3.0 | **Status:** Production Ready ✅

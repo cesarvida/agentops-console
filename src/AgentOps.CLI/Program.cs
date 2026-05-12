@@ -241,10 +241,15 @@ else if (isValidateAgent && args.Length >= 2)
 				console.WriteLine($"[WARN] Could not post PR comment: {ex.Message}");
 			}
 		}
+
+		// CI enforcement: exit 1 so GitHub Actions marks the check as failed
+		if (report.FinalStatus == "BLOCKED")
+			Environment.ExitCode = 1;
 	}
 	catch (Exception ex)
 	{
 		console.WriteLine($"❌ Error validating agent: {ex.Message}");
+		Environment.ExitCode = 1;
 	}
 }
 else if (isDashboard)
