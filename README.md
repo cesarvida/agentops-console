@@ -329,3 +329,133 @@ Open any PR that modifies a file under `data/agent-definitions/`. You should see
 ---
 
 **Version:** 0.4.0 | **Status:** Production Ready ✅
+
+---
+
+## 🎭 Phase 12: Governance Demo
+
+Run a local demo that validates three sample agents — approved, review, and blocked — without any GitHub or Azure dependency.
+
+### Quick start (fake mode — no credentials needed)
+
+```powershell
+dotnet run --project demo/GovernanceDemo.csproj
+```
+
+Fake mode uses a deterministic `FakeAgentSemanticAnalyzer` that returns pre-set risk levels for each agent. No network calls are made.
+
+### Real mode (Azure OpenAI)
+
+```powershell
+$env:DEMO_SEMANTIC_MODE = "real"
+$env:AZURE_OPENAI_ENDPOINT = "https://<your-resource>.cognitiveservices.azure.com/"
+$env:AZURE_OPENAI_API_KEY = "<your-api-key>"
+$env:AZURE_OPENAI_DEPLOYMENT_NAME = "gpt-5.4-nano"
+
+dotnet run --project demo/GovernanceDemo.csproj
+```
+
+### Expected outcomes
+
+| Agent | Rule result | Semantic risk | Final status | Exit code |
+|---|---|---|---|---|
+| `approved-agent.yaml` | APPROVED | LOW | ✅ APPROVED | 0 |
+| `review-agent.yaml` | APPROVED (warnings) | MEDIUM → escalates | ⚠️ REVIEW | 0 |
+| `blocked-agent.yaml` | BLOCKED (criticals) | HIGH (ignored) | ❌ BLOCKED | 1 |
+
+See `demo/EXPECTED_OUTPUT.txt` for a reference snapshot of the fake-mode output.
+
+---
+
+## 🔑 Local Secrets (User Secrets / .env)
+
+Secrets must never be hardcoded or committed. Two supported approaches:
+
+### Option 1: .env file (simplest)
+
+```powershell
+# Copy the template and fill in your values
+Copy-Item .env.example .env
+notepad .env
+```
+
+`.env` is gitignored. The CLI reads `AZURE_OPENAI_*` environment variables directly — you can source `.env` manually:
+
+```powershell
+# PowerShell: load .env into the current session
+Get-Content .env | ForEach-Object {
+    if ($_ -match "^([^#][^=]+)=(.*)$") {
+        [System.Environment]::SetEnvironmentVariable($Matches[1].Trim(), $Matches[2].Trim(), "Process")
+    }
+}
+```
+
+### Option 2: dotnet user-secrets (recommended for development)
+
+```powershell
+# Initialize (run once per project)
+dotnet user-secrets init --project src/AgentOps.CLI/AgentOps.CLI.csproj
+
+# Set secrets
+dotnet user-secrets set "AZURE_OPENAI_ENDPOINT"         "https://<resource>.cognitiveservices.azure.com/" \
+    --project src/AgentOps.CLI/AgentOps.CLI.csproj
+
+dotnet user-secrets set "AZURE_OPENAI_API_KEY"          "<your-api-key>" \
+    --project src/AgentOps.CLI/AgentOps.CLI.csproj
+
+dotnet user-secrets set "AZURE_OPENAI_DEPLOYMENT_NAME"  "gpt-5.4-nano" \
+    --project src/AgentOps.CLI/AgentOps.CLI.csproj
+
+# List stored secrets
+dotnet user-secrets list --project src/AgentOps.CLI/AgentOps.CLI.csproj
+
+# Remove a secret
+dotnet user-secrets remove "AZURE_OPENAI_API_KEY" --project src/AgentOps.CLI/AgentOps.CLI.csproj
+```
+
+User secrets are stored in `%APPDATA%\Microsoft\UserSecrets\<userSecretsId>\secrets.json` on Windows (outside the repo). They are never committed.
+
+---
+
+## 🔬 Autopsy Tool
+
+The autopsy tool performs a health check of the entire governance system and generates `AUTOPSY_REPORT.md` in the repo root.
+
+```powershell
+dotnet run --project tools/autopsy/AutopsyTool.csproj
+```
+
+Or specify the repo root explicitly:
+
+```powershell
+dotnet run --project tools/autopsy/AutopsyTool.csproj -- C:\path\to\repo
+```
+
+The report covers:
+
+| Section | What it checks |
+|---|---|
+| Build & Test | Solution builds; all tests pass |
+| Workflow Integrity | `governance-check.yml` name, job name, triggers, secrets wiring |
+| Exit Code Contract | CLI sets exit code 1 on BLOCKED, not `Environment.Exit()` |
+| Config & Exceptions | `governance-config.yaml`, GovernanceException model |
+| Semantic Analysis | Interface, client, timeout handling, key not logged |
+| Secret Hygiene | `.env.example`, `.gitignore`, regex scan of tracked files |
+| GitHub Readiness | Manual checklist for branch protection setup |
+| Risks | Known operational risks and mitigations |
+
+Returns exit code 1 if any check fails.
+
+### Verify GitHub setup
+
+```powershell
+# PowerShell
+.\scripts\check-github.ps1 -Repo "owner/repo"
+
+# Bash / WSL
+./scripts/check-github.sh owner/repo
+```
+
+Requires the `gh` CLI to be installed and authenticated. If `gh` is not available, the script prints manual instructions instead.
+
+---

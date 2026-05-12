@@ -11,3 +11,6 @@ commitmsg.txt
 
 # Local environment secrets (never commit)
 .env
+secrets.local.json
+**/*.user.json
+**/secrets.json

@@ -1,0 +1,17 @@
+id: demo-blocked-003
+name: Demo Blocked Agent
+version: dev
+description: Agent with forbidden actions — triggers critical violations
+owner: ""
+actions:
+  - push_to_main
+  - delete_files
+  - access_secrets
+  - read_code
+audit:
+  log_all_actions: false
+  retention_days: 0
+rules: []
+tools:
+  - git_pusher
+  - secret_reader
