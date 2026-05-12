@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentOps.Security", "src\Ag
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentOps.Agents", "src\AgentOps.Agents\AgentOps.Agents.csproj", "{5FDF89F8-E0E2-4788-A6AC-06676202559A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentOps.GitHub", "src\AgentOps.GitHub\AgentOps.GitHub.csproj", "{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentOps.CLI", "src\AgentOps.CLI\AgentOps.CLI.csproj", "{C67B531A-5714-44CA-9D36-F8CC782F9AC4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentOps.Core.Tests", "tests\AgentOps.Core.Tests\AgentOps.Core.Tests.csproj", "{11F56F98-9AA9-470F-BD13-5346EDBB0B5F}"
@@ -171,11 +173,24 @@ Global
 		{25D09B5C-6C48-41B4-93EF-DF11D441BCDF}.Release|x64.Build.0 = Release|Any CPU
 		{25D09B5C-6C48-41B4-93EF-DF11D441BCDF}.Release|x86.ActiveCfg = Release|Any CPU
 		{25D09B5C-6C48-41B4-93EF-DF11D441BCDF}.Release|x86.Build.0 = Release|Any CPU
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}.Debug|x64.Build.0 = Debug|Any CPU
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}.Debug|x86.Build.0 = Debug|Any CPU
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}.Release|x64.ActiveCfg = Release|Any CPU
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}.Release|x64.Build.0 = Release|Any CPU
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}.Release|x86.ActiveCfg = Release|Any CPU
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{25D09B5C-6C48-41B4-93EF-DF11D441BCDF} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{A2E3F104-7D8C-4B5A-9F6E-1D2C3E4F5A6B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

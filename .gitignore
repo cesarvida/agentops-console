@@ -14,3 +14,17 @@ commitmsg.txt
 secrets.local.json
 **/*.user.json
 **/secrets.json
+
+# Generated runtime outputs (re-created by the autopsy tool / validate-agent runs)
+outputs/
+AUTOPSY_REPORT.md
+data/audit.log
+data/evaluations/
+
+# Local build/test artifacts
+buildlog.txt
+test_output.txt
+**/TestResults/
+
+# Workflow test artifacts
+workflow-artifacts-*/

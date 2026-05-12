@@ -1,4 +1,210 @@
-# Architecture - AgentOps Console
+# Architecture — AgentOps Console
+
+> Current state: Phases 9–12 complete. Governance enforcement, semantic analysis, demo harness.
+
+## Overview
+
+AgentOps Console is a **governed agent registry** and **PR merge gate**.
+When a developer pushes a YAML agent definition and opens a pull request, a GitHub Actions workflow validates it against a rule engine and optionally a semantic AI reviewer. If the agent is BLOCKED, the merge is rejected at the branch-protection level.
+
+```
+Developer pushes YAML
+        │
+        ▼
+┌──────────────────────────────────┐
+│   GitHub Pull Request            │
+│   triggers governance-check.yml  │
+└──────────────┬───────────────────┘
+               │  dotnet run validate-agent <file>
+               ▼
+┌──────────────────────────────────┐
+│   GovernanceRuleEngine           │
+│   ─ AllowedActionsRule           │
+│   ─ ForbiddenActionsRule         │
+│   ─ AuditLoggingRule             │
+│   ─ OwnerDefinedRule             │
+│   ─ VersionDefinedRule           │
+│   ─ RateLimitRule                │
+│   ─ TimeoutRule                  │
+│   ─ EnvironmentScopeRule         │
+└──────────────┬───────────────────┘
+               │  optional (if Azure creds present)
+               ▼
+┌──────────────────────────────────┐
+│   AzureOpenAIGovernanceClient    │
+│   semantic risk: LOW/MEDIUM/HIGH │
+└──────────────┬───────────────────┘
+               │
+               ▼
+          FinalStatus
+     APPROVED / REVIEW / BLOCKED
+               │
+     exit 0   / exit 0 /  exit 1
+               │
+               ▼
+  GitHub Required Status Check
+  PASS (merge allowed) / FAIL (merge blocked)
+```
+
+---
+
+## Project Structure
+
+```
+AgentOps.Console.sln
+├── src/
+│   ├── AgentOps.Core/           — Domain models, governance rules, config types
+│   ├── AgentOps.Application/    — Use cases, command handlers, rule engine
+│   ├── AgentOps.Infrastructure/ — YAML parsing, Azure OpenAI client, GitHub API client
+│   ├── AgentOps.CLI/            — Entry point, DI wiring, command dispatch
+│   ├── AgentOps.Agents/         — Agent framework placeholder (dependency of App+Infra)
+│   ├── AgentOps.GitHub/         — GitHub REST API client (PR analysis, comment posting)
+│   └── AgentOps.Security/       — Security analysis rules (prompt injection, etc.)
+├── tests/
+│   ├── AgentOps.Core.Tests/         — Domain entity and governance config tests
+│   ├── AgentOps.Application.Tests/  — Rule engine, exceptions, semantic, demo golden tests
+│   ├── AgentOps.Security.Tests/     — Security rule tests
+│   └── AgentOps.Infrastructure.Tests/ — File persistence tests
+├── demo/                        — Runnable demo harness (fake + real semantic modes)
+├── tools/autopsy/               — Health check tool, generates autopsy report
+├── scripts/                     — GitHub setup verification scripts
+├── data/
+│   ├── governance-config.yaml   — Per-repo governance rules and scoring config
+│   └── agent-definitions/       — Example agent YAML fixtures
+└── .github/workflows/
+    ├── governance-check.yml     — Required Status Check (DO NOT RENAME)
+    └── pr-analysis.yml          — Optional PR comment analysis workflow
+```
+
+---
+
+## Layer Responsibilities
+
+### `AgentOps.Core` — Domain Layer
+
+**No dependencies** on other AgentOps projects.
+
+Key types:
+- `AgentDefinition` — The agent being governed. Holds `AgentConfiguration` with `AllowedActions`, `Environments`, `AuditConfig`, `Exceptions`.
+- `GovernanceConfig` — Per-repo config: allowed/forbidden action lists, scoring thresholds, `SemanticAnalysisConfig`.
+- `GovernanceReport` — Result of an evaluation: `FinalStatus`, `GovernanceScore`, rule results, `SemanticAnalysis`.
+- `GovernanceException` — Human-approved override that downgrades a Critical rule result to Warning for a time-bounded period.
+- `IGovernanceRule` / `IConfigurableGovernanceRule` — Rule contracts. Configurable rules receive `GovernanceConfig` alongside the agent.
+- **Rules** (8 rules, all in `Core.Governance.Rules/`):
+  | Rule | Severity | What it checks |
+  |---|---|---|
+  | `AllowedActionsRule` | Critical | Actions must be in the allowed whitelist |
+  | `ForbiddenActionsRule` | Critical | Actions must not appear in the forbidden list |
+  | `AuditLoggingRule` | Warning | Agent must have `log_all_actions: true` |
+  | `OwnerDefinedRule` | Critical | Agent must have a non-empty owner |
+  | `VersionDefinedRule` | Critical | Version must match semver (not "latest", "dev", etc.) |
+  | `RateLimitRule` | Warning | `requests_per_minute` should be ≤ 1000 |
+  | `TimeoutRule` | Warning | `timeout_seconds` should be ≤ 300 |
+  | `EnvironmentScopeRule` | Warning | At least one environment must be declared |
+
+### `AgentOps.Application` — Use Case Layer
+
+Depends on Core, Agents.
+
+Key types:
+- `GovernanceRuleEngine` — Runs all registered rules against an agent. Applies `GovernanceException` downgrades. Computes `GovernanceScore` and `FinalStatus` (APPROVED/REVIEW/BLOCKED) based on `ScoringConfig` thresholds.
+- `ValidateAgentCommandHandler` — Orchestrates: deserialize YAML → run rule engine → optional semantic analysis → merge results → persist JSON report.
+- `AgentYamlDeserializer` — Parses agent YAML using YamlDotNet with CamelCase naming.
+- `IAgentSemanticAnalyzer` — Interface for semantic analysis. Default implementation is `AzureOpenAIGovernanceClient`. A `FakeAgentSemanticAnalyzer` is available in `demo/` for testing without credentials.
+
+### `AgentOps.Infrastructure` — External Dependencies Layer
+
+Depends on Core, Application, Agents, GitHub.
+
+Key types:
+- `AzureOpenAIGovernanceClient` — Calls Azure OpenAI Chat Completions to assess agent YAML semantics. Returns `SemanticAnalysisResult.Skipped(...)` on any error — never throws.
+- `GovernanceConfigLoader` — Fetches `data/governance-config.yaml` from the GitHub API (used in CI).
+- `LocalGovernanceConfigReader` — Reads `data/governance-config.yaml` from the local filesystem (used in CLI `validate-agent`).
+- `GovernanceConfigParser` — Shared YAML parsing for governance config (UnderscoredNamingConvention).
+
+### `AgentOps.CLI` — Entry Point
+
+Depends on all other src projects.
+
+The `validate-agent <file>` subcommand is the core of the enforcement pipeline:
+1. Reads `data/governance-config.yaml` via `LocalGovernanceConfigReader`
+2. Builds `GovernanceRuleEngine` with all 8 rules
+3. Builds `AzureOpenAIGovernanceClient` if Azure env vars are set
+4. Calls `ValidateAgentCommandHandler.HandleAsync(command, config)`
+5. Displays the report
+6. Sets `Environment.ExitCode = 1` if `report.FinalStatus == "BLOCKED"`
+
+---
+
+## Governance Config System
+
+`data/governance-config.yaml` controls the rule behavior per repo:
+
+```yaml
+governance:
+  allowed_actions: [read_code, post_comment, ...]
+  forbidden_actions: [push_to_main, delete_files, ...]
+  scoring:
+    critical_penalty: 25        # score deducted per Critical violation
+    warning_penalty: 10         # score deducted per Warning
+    blocked_threshold: 40       # score ≤ 40 → BLOCKED
+    review_threshold: 70        # score ≤ 70 → REVIEW
+  audit:
+    required: true
+    min_retention_days: 30
+  semantic_analysis:
+    enabled: true
+    threshold: MEDIUM           # MEDIUM risk escalates APPROVED → REVIEW
+    timeout_seconds: 5
+    max_tokens: 800
+```
+
+When the file is absent or unparseable, `GovernanceConfig.Default` is used (all defaults, semantic disabled).
+
+---
+
+## Exception System
+
+An agent YAML can declare governance exceptions for temporarily approved violations:
+
+```yaml
+exceptions:
+  - rule_name: "Allowed Actions Whitelist"
+    justification: "Approved by security team for migration window"
+    approved_by: "security-team"
+    expires_at: "2026-06-01T00:00:00Z"
+```
+
+The engine downgrades matching Critical violations to Warning for the exception period. Once `expires_at` passes, the exception is no longer applied.
+
+---
+
+## Semantic Analysis Merge Logic
+
+After the rule engine runs, semantic analysis is optionally applied:
+
+| Rule-based status | Semantic risk | Final status |
+|---|---|---|
+| APPROVED | LOW | APPROVED |
+| APPROVED | MEDIUM | REVIEW |
+| APPROVED or REVIEW | HIGH | BLOCKED |
+| BLOCKED | any | BLOCKED (unchanged) |
+
+The rule-based BLOCKED result is **never overridden** by semantic analysis.
+If Azure is unavailable (missing creds, timeout, invalid response), semantic is skipped silently.
+
+---
+
+## Exit Code Contract (Phase 10)
+
+| FinalStatus | CLI exit code | GitHub check | Merge |
+|---|---|---|---|
+| APPROVED | 0 | ✅ pass | Allowed |
+| REVIEW | 0 | ✅ pass | Allowed (warning in log) |
+| BLOCKED | **1** | ❌ fail | **Blocked** |
+
+`Environment.ExitCode = 1` is used (not `Environment.Exit(1)`) so async cleanup runs before process exit.
+
 
 ## Visión Arquitectónica
 
