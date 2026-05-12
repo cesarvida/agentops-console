@@ -17,11 +17,16 @@ namespace AgentOps.Application.Dashboard
     {
         private readonly IAgentFetcher _fetcher;
         private readonly GovernanceRuleEngine _engine;
+        private readonly IGovernanceConfigLoader _configLoader;
 
-        public GetDashboardQueryHandler(IAgentFetcher fetcher, GovernanceRuleEngine engine)
+        public GetDashboardQueryHandler(
+            IAgentFetcher fetcher,
+            GovernanceRuleEngine engine,
+            IGovernanceConfigLoader configLoader)
         {
-            _fetcher = fetcher ?? throw new ArgumentNullException(nameof(fetcher));
-            _engine  = engine  ?? throw new ArgumentNullException(nameof(engine));
+            _fetcher      = fetcher       ?? throw new ArgumentNullException(nameof(fetcher));
+            _engine       = engine        ?? throw new ArgumentNullException(nameof(engine));
+            _configLoader = configLoader  ?? throw new ArgumentNullException(nameof(configLoader));
         }
 
         /// <summary>
@@ -41,16 +46,19 @@ namespace AgentOps.Application.Dashboard
                 GeneratedAt = DateTime.UtcNow
             };
 
-            // 1. Fetch all agent definitions from the GitHub repo
+            // 1. Load repo governance config
+            var config = await _configLoader.LoadAsync(query.Owner, query.Repo);
+
+            // 2. Fetch all agent definitions from the GitHub repo
             var agents = await _fetcher.FetchAgentsAsync(query.Owner, query.Repo);
 
             if (agents.Count == 0)
                 return result;
 
-            // 2. Evaluate each agent in parallel
-            var reports = await Task.WhenAll(agents.Select(a => _engine.EvaluateAsync(a)));
+            // 3. Evaluate each agent with the repo config
+            var reports = await Task.WhenAll(agents.Select(a => _engine.EvaluateAsync(a, config)));
 
-            // 3. Build per-agent rows
+            // 4. Build per-agent rows
             foreach (var report in reports)
             {
                 var violations = report.RuleResults
@@ -58,15 +66,22 @@ namespace AgentOps.Application.Dashboard
                     .SelectMany(r => r.Violations)
                     .ToList();
 
+                var exceptionNotes = report.RuleResults
+                    .Where(r => !string.IsNullOrEmpty(r.ExceptionNote))
+                    .Select(r => r.ExceptionNote!)
+                    .ToList();
+
                 result.Agents.Add(new AgentDashboardRow
                 {
-                    AgentName          = report.AgentName,
-                    Version            = report.AgentVersion,
-                    GovernanceScore    = report.GovernanceScore,
-                    Status             = report.FinalStatus,
-                    CriticalViolations = report.CriticalViolations,
-                    WarningViolations  = report.WarningViolations,
-                    ViolationDetails   = violations
+                    AgentName           = report.AgentName,
+                    Version             = report.AgentVersion,
+                    GovernanceScore     = report.GovernanceScore,
+                    Status              = report.FinalStatus,
+                    CriticalViolations  = report.CriticalViolations,
+                    WarningViolations   = report.WarningViolations,
+                    ViolationDetails    = violations,
+                    HasActiveExceptions = report.HasExceptionOverrides,
+                    ExceptionNotes      = exceptionNotes
                 });
             }
 

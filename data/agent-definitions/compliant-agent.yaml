@@ -4,12 +4,26 @@ version: 1.2.3
 description: Agent that reviews code for security and quality issues
 owner: team-backend
 
-agent:
-  name: Code Review Agent
-  version: 1.2.3
-  owner: team-backend
-  description: Performs comprehensive code reviews
-  
+actions:
+  - read_code
+  - read_files
+  - post_comment
+  - create_report
+  - request_changes
+
+rate_limit:
+  requests_per_minute: 60
+
+timeout_seconds: 30
+
+environments:
+  - development
+  - staging
+
+audit:
+  log_all_actions: true
+  retention_days: 90
+
 governance:
   allowed_actions:
     - read_code
@@ -30,3 +44,10 @@ tools:
   - github_api
   - code_analysis
   - linter
+
+# Excepción válida: acceso temporal a producción con aprobación
+exceptions:
+  - rule: "Environment Scope Defined"
+    reason: "Piloting production deployment for migration — temporary exception"
+    approved_by: "cesarvida"
+    expires_at: "2026-06-01T00:00:00Z"

@@ -31,5 +31,9 @@ namespace AgentOps.Application.Dashboard
         public int CriticalViolations { get; set; }
         public int WarningViolations { get; set; }
         public List<string> ViolationDetails { get; set; } = new();
+        /// <summary>True when at least one Critical violation was downgraded via an active exception.</summary>
+        public bool HasActiveExceptions { get; set; }
+        /// <summary>Notes for violations that were downgraded from Critical to Warning by an exception.</summary>
+        public List<string> ExceptionNotes { get; set; } = new();
     }
 }

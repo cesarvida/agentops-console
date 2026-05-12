@@ -67,7 +67,9 @@ namespace AgentOps.CLI.Dashboard
                 }
 
                 string violations = BuildViolationSummary(row);
-                WriteTableRow(row.AgentName, row.Version, row.GovernanceScore.ToString(),
+                // Show ⚡ next to agent name when there are active exceptions
+                string displayName = row.HasActiveExceptions ? row.AgentName + " ⚡" : row.AgentName;
+                WriteTableRow(displayName, row.Version, row.GovernanceScore.ToString(),
                               statusLabel, violations, rowColor: statusColor);
             }
 
@@ -88,12 +90,20 @@ namespace AgentOps.CLI.Dashboard
                 foreach (var agent in agentsWithViolations)
                 {
                     string statusIcon = agent.Status == "BLOCKED" ? "❌" : "⚠️ ";
-                    WritePaddedLine($"  {statusIcon} {agent.AgentName}:",
+                    string nameDisplay = agent.HasActiveExceptions
+                        ? agent.AgentName + " ⚡"
+                        : agent.AgentName;
+                    WritePaddedLine($"  {statusIcon} {nameDisplay}:",
                         agent.Status == "BLOCKED" ? ConsoleColor.Red : ConsoleColor.Yellow);
 
                     foreach (var violation in agent.ViolationDetails)
                     {
                         WritePaddedLine($"    - {violation}");
+                    }
+                    // Show exception notes if any
+                    foreach (var note in agent.ExceptionNotes)
+                    {
+                        WritePaddedLine($"    {note}", ConsoleColor.Yellow);
                     }
                     WritePaddedLine("");
                 }

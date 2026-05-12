@@ -37,6 +37,13 @@ namespace AgentOps.Core.Governance
 
         /// <summary>List of recommendations to fix the violations.</summary>
         public List<string> Recommendations { get; set; } = new();
+
+        /// <summary>
+        /// When a <see cref="GovernanceException"/> is active and has downgraded this result
+        /// from Critical to Warning, this property carries a human-readable note.
+        /// Null otherwise.
+        /// </summary>
+        public string? ExceptionNote { get; set; }
     }
 
     /// <summary>
@@ -59,5 +66,19 @@ namespace AgentOps.Core.Governance
         /// <param name="agent">The agent definition to evaluate.</param>
         /// <returns>A RuleResult indicating compliance and any violations.</returns>
         Task<RuleResult> EvaluateAsync(AgentDefinition agent);
+    }
+
+    /// <summary>
+    /// Extended interface for rules that can use repo-specific <see cref="GovernanceConfig"/>
+    /// to override their default allowed/forbidden lists and thresholds.
+    /// Rules that implement this interface are called with the loaded config by
+    /// <see cref="AgentOps.Application.Governance.GovernanceRuleEngine"/>.
+    /// </summary>
+    public interface IConfigurableGovernanceRule : IGovernanceRule
+    {
+        /// <summary>
+        /// Evaluates an agent definition using the provided governance configuration.
+        /// </summary>
+        Task<RuleResult> EvaluateAsync(AgentDefinition agent, GovernanceConfig config);
     }
 }

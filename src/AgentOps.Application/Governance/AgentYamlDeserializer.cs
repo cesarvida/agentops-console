@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using AgentOps.Core.Entities;
+using AgentOps.Core.Governance;
 using AgentOps.Core.ValueObjects;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -100,6 +101,67 @@ namespace AgentOps.Application.Governance
                 if (string.IsNullOrWhiteSpace(desc) || desc.Length < 10)
                     desc = $"Agent '{name}' loaded from YAML for governance validation";
 
+                // ── Phase 9: new optional fields ────────────────────────────
+
+                // rate_limit.requests_per_minute
+                if (raw.TryGetValue("rate_limit", out var rateLimitNode))
+                {
+                    var rlDict = AsDict(rateLimitNode);
+                    if (rlDict != null &&
+                        rlDict.TryGetValue("requests_per_minute", out var rpm) &&
+                        rpm != null &&
+                        int.TryParse(rpm.ToString(), out int rpmVal))
+                    {
+                        config.RateLimitRequestsPerMinute = rpmVal;
+                    }
+                }
+
+                // timeout_seconds
+                if (raw.TryGetValue("timeout_seconds", out var timeoutVal) &&
+                    timeoutVal != null &&
+                    int.TryParse(timeoutVal.ToString(), out int timeoutSecs))
+                {
+                    config.TimeoutSeconds = timeoutSecs;
+                }
+
+                // environments list
+                if (raw.TryGetValue("environments", out var envsVal) && envsVal is IEnumerable envsList)
+                {
+                    foreach (var env in envsList)
+                        if (env != null) config.Environments.Add(env.ToString()!);
+                }
+
+                // exceptions list
+                var exceptions = new List<GovernanceException>();
+                if (raw.TryGetValue("exceptions", out var exceptionsVal) &&
+                    exceptionsVal is IEnumerable exceptionsEnum)
+                {
+                    foreach (var item in exceptionsEnum)
+                    {
+                        var ex = AsDict(item);
+                        if (ex == null) continue;
+
+                        string ruleName   = ex.TryGetValue("rule",        out var r) && r != null ? r.ToString()! : "";
+                        string reason     = ex.TryGetValue("reason",      out var rs) && rs != null ? rs.ToString()! : "";
+                        string approvedBy = ex.TryGetValue("approved_by", out var ab) && ab != null ? ab.ToString()! : "";
+                        string expiresStr = ex.TryGetValue("expires_at",  out var ea) && ea != null ? ea.ToString()! : "";
+
+                        if (string.IsNullOrWhiteSpace(ruleName)) continue;
+
+                        DateTime.TryParse(expiresStr, null,
+                            System.Globalization.DateTimeStyles.RoundtripKind,
+                            out DateTime expiresAt);
+
+                        exceptions.Add(new GovernanceException
+                        {
+                            RuleName   = ruleName,
+                            Reason     = reason,
+                            ApprovedBy = approvedBy,
+                            ExpiresAt  = expiresAt
+                        });
+                    }
+                }
+
                 return new AgentDefinition(
                     new AgentId(id),
                     name.Length >= 3 ? name : $"Agent-{id[..6]}",
@@ -110,7 +172,10 @@ namespace AgentOps.Application.Governance
                     configuration: config,
                     createdAt: DateTime.UtcNow,
                     version: string.IsNullOrWhiteSpace(version) ? "0.0.0" : version
-                );
+                )
+                {
+                    Exceptions = exceptions
+                };
             }
             catch (Exception ex)
             {

@@ -41,6 +41,13 @@ namespace AgentOps.Core.Governance
         public DateTime EvaluatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>
+        /// True when at least one Critical violation was downgraded to Warning
+        /// because of an active <see cref="GovernanceException"/>.
+        /// </summary>
+        public bool HasExceptionOverrides
+            => RuleResults.Any(r => !string.IsNullOrEmpty(r.ExceptionNote));
+
+        /// <summary>
         /// Converts the governance report to a markdown comment suitable for posting on GitHub PRs.
         /// </summary>
         /// <returns>A markdown-formatted string suitable for PR comments.</returns>

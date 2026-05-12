@@ -9,6 +9,9 @@ namespace AgentOps.Application.Governance
 {
     /// <summary>
     /// The main Governance Rule Engine that orchestrates all governance rule evaluations.
+    /// Supports optional repo-specific <see cref="GovernanceConfig"/> for configurable
+    /// allowed/forbidden lists and scoring thresholds, and active
+    /// <see cref="GovernanceException"/> downgrades.
     /// </summary>
     public class GovernanceRuleEngine
     {
@@ -20,78 +23,122 @@ namespace AgentOps.Application.Governance
         }
 
         /// <summary>
-        /// Evaluates an agent definition against all governance rules.
+        /// Evaluates an agent using default governance configuration.
+        /// </summary>
+        public Task<GovernanceReport> EvaluateAsync(AgentDefinition agent)
+            => EvaluateAsync(agent, GovernanceConfig.Default);
+
+        /// <summary>
+        /// Evaluates an agent using the provided governance configuration.
         /// </summary>
         /// <param name="agent">The agent definition to evaluate.</param>
-        /// <returns>A comprehensive governance report.</returns>
-        public async Task<GovernanceReport> EvaluateAsync(AgentDefinition agent)
+        /// <param name="config">Repo-specific config; uses defaults when null.</param>
+        public async Task<GovernanceReport> EvaluateAsync(AgentDefinition agent, GovernanceConfig? config)
         {
             if (agent == null)
                 throw new ArgumentNullException(nameof(agent));
 
+            config ??= GovernanceConfig.Default;
+
             var report = new GovernanceReport
             {
-                AgentId = agent.Id.Value,
-                AgentName = agent.Name,
+                AgentId      = agent.Id.Value,
+                AgentName    = agent.Name,
                 AgentVersion = agent.Version,
-                EvaluatedAt = DateTime.UtcNow
+                EvaluatedAt  = DateTime.UtcNow
             };
 
-            // Run all rules in parallel for performance
-            var ruleEvaluations = await Task.WhenAll(
-                _rules.Select(rule => rule.EvaluateAsync(agent))
+            // 1. Run all rules (config-aware where supported)
+            var rawResults = await Task.WhenAll(
+                _rules.Select(rule => rule is IConfigurableGovernanceRule cr
+                    ? cr.EvaluateAsync(agent, config)
+                    : rule.EvaluateAsync(agent))
             );
 
-            // Collect results
-            report.RuleResults.AddRange(ruleEvaluations);
+            // 2. Apply active exception downgrades (Critical → Warning)
+            var ruleResults = ApplyExceptions(agent, rawResults);
 
-            // Count violations by severity
-            report.CriticalViolations = ruleEvaluations.Count(r => !r.IsCompliant && r.Severity == RuleSeverity.Critical);
-            report.WarningViolations = ruleEvaluations.Count(r => !r.IsCompliant && r.Severity == RuleSeverity.Warning);
+            // 3. Collect results
+            report.RuleResults.AddRange(ruleResults);
 
-            // Calculate governance score
-            report.GovernanceScore = CalculateScore(report.CriticalViolations, report.WarningViolations);
+            // 4. Count violations
+            report.CriticalViolations = ruleResults.Count(r => !r.IsCompliant && r.Severity == RuleSeverity.Critical);
+            report.WarningViolations  = ruleResults.Count(r => !r.IsCompliant && r.Severity == RuleSeverity.Warning);
 
-            // Determine final status
-            report.IsCompliant = report.CriticalViolations == 0;
-            report.FinalStatus = DetermineFinalStatus(report.GovernanceScore, report.CriticalViolations);
+            // 5. Calculate score using config thresholds
+            report.GovernanceScore = CalculateScore(
+                report.CriticalViolations, report.WarningViolations, config.Scoring);
+
+            // 6. Determine status using config thresholds
+            report.IsCompliant  = report.CriticalViolations == 0;
+            report.FinalStatus  = DetermineFinalStatus(
+                report.GovernanceScore, report.CriticalViolations, config.Scoring);
 
             return report;
         }
 
+        // ── Private helpers ──────────────────────────────────────────────────
+
         /// <summary>
-        /// Calculates the governance score based on violations.
-        /// Base score: 100
-        /// Each critical violation: -25 points
-        /// Each warning violation: -10 points
-        /// Minimum score: 0
+        /// For each Critical non-compliant result, checks if a valid
+        /// <see cref="GovernanceException"/> exists in the agent's exception list.
+        /// If yes, the result is downgraded to Warning and annotated.
         /// </summary>
-        private int CalculateScore(int criticalViolations, int warningViolations)
+        private static List<RuleResult> ApplyExceptions(AgentDefinition agent, RuleResult[] results)
+        {
+            var exceptions = agent.Exceptions;
+            if (exceptions == null || exceptions.Count == 0)
+                return new List<RuleResult>(results);
+
+            var processed = new List<RuleResult>(results.Length);
+            foreach (var result in results)
+            {
+                // Only downgrade non-compliant Critical violations
+                if (result.IsCompliant || result.Severity != RuleSeverity.Critical)
+                {
+                    processed.Add(result);
+                    continue;
+                }
+
+                var active = exceptions.FirstOrDefault(e =>
+                    e.IsValid &&
+                    string.Equals(e.RuleName, result.RuleName, StringComparison.OrdinalIgnoreCase));
+
+                if (active == null)
+                {
+                    processed.Add(result);
+                    continue;
+                }
+
+                // Clone and downgrade
+                processed.Add(new RuleResult
+                {
+                    IsCompliant      = false,
+                    RuleName         = result.RuleName,
+                    Severity         = RuleSeverity.Warning,    // ← downgraded
+                    Violations       = result.Violations,
+                    Recommendations  = result.Recommendations,
+                    ExceptionNote    = $"⚡ Excepción activa hasta {active.ExpiresAt:yyyy-MM-dd} — aprobada por {active.ApprovedBy}"
+                });
+            }
+
+            return processed;
+        }
+
+        private static int CalculateScore(int critical, int warnings, ScoringConfig scoring)
         {
             int score = 100;
-            score -= (criticalViolations * 25);
-            score -= (warningViolations * 10);
+            score -= critical * scoring.CriticalPenalty;
+            score -= warnings * scoring.WarningPenalty;
             return Math.Max(0, score);
         }
 
-        /// <summary>
-        /// Determines the final status based on score and critical violations.
-        /// </summary>
-        private string DetermineFinalStatus(int score, int criticalViolations)
+        private static string DetermineFinalStatus(int score, int critical, ScoringConfig scoring)
         {
-            // BLOCKED if critical violations or score too low
-            if (criticalViolations > 0 || score < 40)
-            {
+            if (critical > 0 || score < scoring.BlockedThreshold)
                 return "BLOCKED";
-            }
-
-            // REVIEW if score is medium
-            if (score < 70)
-            {
+            if (score < scoring.ReviewThreshold)
                 return "REVIEW";
-            }
-
-            // APPROVED if score is high and no critical violations
             return "APPROVED";
         }
     }

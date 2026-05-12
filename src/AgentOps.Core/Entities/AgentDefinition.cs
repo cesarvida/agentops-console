@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using AgentOps.Core.Governance;
 using AgentOps.Core.ValueObjects;
 using AgentOps.Core.Exceptions;
 
@@ -16,6 +17,13 @@ namespace AgentOps.Core.Entities
         public AgentConfiguration Configuration { get; init; }
         public DateTime CreatedAt { get; init; }
         public string Version { get; init; }
+
+        /// <summary>
+        /// Optional list of active, approved governance exceptions for this agent.
+        /// When an exception is present and valid, the engine downgrades a
+        /// matching Critical violation to Warning.
+        /// </summary>
+        public List<GovernanceException> Exceptions { get; init; } = new();
 
         public AgentDefinition(
             AgentId id,
@@ -58,5 +66,14 @@ namespace AgentOps.Core.Entities
         public bool RequiresAudit { get; set; }
         public string Owner { get; set; } = string.Empty;
         public List<string> AllowedActions { get; set; } = new();
+
+        /// <summary>Optional: max requests per minute for this agent (for RateLimitRule).</summary>
+        public int? RateLimitRequestsPerMinute { get; set; }
+
+        /// <summary>Optional: request timeout in seconds (for TimeoutRule).</summary>
+        public int? TimeoutSeconds { get; set; }
+
+        /// <summary>Optional: list of deployment environments the agent may run in (for EnvironmentScopeRule).</summary>
+        public List<string> Environments { get; set; } = new();
     }
 }

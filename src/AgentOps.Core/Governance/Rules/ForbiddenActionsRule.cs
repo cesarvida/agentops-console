@@ -7,26 +7,27 @@ namespace AgentOps.Core.Governance.Rules
 {
     /// <summary>
     /// Rule that blocks agents from declaring forbidden actions.
+    /// The forbidden set is taken from the repo's <see cref="GovernanceConfig"/> when available,
+    /// falling back to the default set.
     /// </summary>
-    public class ForbiddenActionsRule : IGovernanceRule
+    public class ForbiddenActionsRule : IConfigurableGovernanceRule
     {
-        private static readonly HashSet<string> ForbiddenActions = new()
-        {
-            "push_to_main",
-            "delete_files",
-            "delete_database",
-            "access_secrets",
-            "modify_permissions",
-            "execute_code",
-            "bypass_authentication"
-        };
+        private static readonly HashSet<string> DefaultForbidden =
+            new(GovernanceConfig.DefaultForbiddenActions);
 
-        public string RuleName => "Forbidden Actions Block";
+        public string RuleName  => "Forbidden Actions Block";
         public string Description => "Agent cannot declare forbidden high-risk actions";
         public RuleSeverity Severity => RuleSeverity.Critical;
 
         public Task<RuleResult> EvaluateAsync(AgentDefinition agent)
+            => EvaluateAsync(agent, GovernanceConfig.Default);
+
+        public Task<RuleResult> EvaluateAsync(AgentDefinition agent, GovernanceConfig config)
         {
+            var forbidden = config.ForbiddenActions?.Count > 0
+                ? new HashSet<string>(config.ForbiddenActions)
+                : DefaultForbidden;
+
             var result = new RuleResult
             {
                 RuleName = RuleName,
@@ -37,23 +38,20 @@ namespace AgentOps.Core.Governance.Rules
             };
 
             if (agent?.Configuration?.AllowedActions == null || !agent.Configuration.AllowedActions.Any())
-            {
-                return Task.FromResult(result); // No actions declared is OK
-            }
+                return Task.FromResult(result);
 
-            var forbiddenDeclared = agent.Configuration.AllowedActions
-                .Where(action => ForbiddenActions.Contains(action))
+            var declared = agent.Configuration.AllowedActions
+                .Where(a => forbidden.Contains(a))
                 .ToList();
 
-            if (forbiddenDeclared.Any())
+            if (declared.Any())
             {
                 result.IsCompliant = false;
-                foreach (var action in forbiddenDeclared)
-                {
-                    result.Violations.Add($"Action '{action}' is strictly forbidden");
-                }
+                foreach (var a in declared)
+                    result.Violations.Add($"Action '{a}' is strictly forbidden");
                 result.Recommendations.Add("Remove all forbidden actions from the agent definition");
-                result.Recommendations.Add($"Forbidden actions: {string.Join(", ", ForbiddenActions)}");
+                result.Recommendations.Add(
+                    $"Forbidden actions: {string.Join(", ", forbidden)}");
             }
 
             return Task.FromResult(result);

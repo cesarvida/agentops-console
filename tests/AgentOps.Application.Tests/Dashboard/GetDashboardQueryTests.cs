@@ -45,6 +45,15 @@ namespace AgentOps.Application.Tests.Dashboard
                     new Mock<IAgentFetcher>());
         }
 
+        /// <summary>Stub IGovernanceConfigLoader that always returns the default config.</summary>
+        private static Mock<IGovernanceConfigLoader> DefaultConfigLoader()
+        {
+            var mock = new Mock<IGovernanceConfigLoader>();
+            mock.Setup(l => l.LoadAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(GovernanceConfig.Default);
+            return mock;
+        }
+
         // ── Test 1: Three agents with distinct statuses ───────────────────────
 
         /// <summary>
@@ -102,7 +111,7 @@ namespace AgentOps.Application.Tests.Dashboard
             var allRules = warningRules.Select(m => m.Object)
                                        .Append(criticalRule.Object);
             var engine  = new GovernanceRuleEngine(allRules);
-            var handler = new GetDashboardQueryHandler(mockFetcher.Object, engine);
+            var handler = new GetDashboardQueryHandler(mockFetcher.Object, engine, DefaultConfigLoader().Object);
 
             // Act
             var result = await handler.HandleAsync(new GetDashboardQuery("owner", "repo"));
@@ -134,7 +143,7 @@ namespace AgentOps.Application.Tests.Dashboard
                     .ReturnsAsync(new RuleResult { IsCompliant = true, RuleName = "NopRule", Severity = RuleSeverity.Info });
 
             var engine  = new GovernanceRuleEngine(new[] { passRule.Object });
-            var handler = new GetDashboardQueryHandler(mockFetcher.Object, engine);
+            var handler = new GetDashboardQueryHandler(mockFetcher.Object, engine, DefaultConfigLoader().Object);
 
             // Act — must not throw
             var result = await handler.HandleAsync(new GetDashboardQuery("empty-owner", "empty-repo"));
@@ -171,7 +180,7 @@ namespace AgentOps.Application.Tests.Dashboard
                     .ReturnsAsync(new RuleResult { IsCompliant = true, RuleName = "PassRule", Severity = RuleSeverity.Critical });
 
             var engine  = new GovernanceRuleEngine(new[] { passRule.Object });
-            var handler = new GetDashboardQueryHandler(mockFetcher.Object, engine);
+            var handler = new GetDashboardQueryHandler(mockFetcher.Object, engine, DefaultConfigLoader().Object);
 
             // Act
             var result = await handler.HandleAsync(new GetDashboardQuery("o", "r"));
@@ -217,7 +226,7 @@ namespace AgentOps.Application.Tests.Dashboard
             });
 
             var engine  = new GovernanceRuleEngine(criticalRules);
-            var handler = new GetDashboardQueryHandler(mockFetcher.Object, engine);
+            var handler = new GetDashboardQueryHandler(mockFetcher.Object, engine, DefaultConfigLoader().Object);
 
             // Act
             var result = await handler.HandleAsync(new GetDashboardQuery("o", "r"));

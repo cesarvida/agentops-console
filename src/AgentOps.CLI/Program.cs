@@ -73,6 +73,9 @@ var host = Host.CreateDefaultBuilder(args)
 		services.AddSingleton<IGovernanceRule, AuditLoggingRule>();
 		services.AddSingleton<IGovernanceRule, OwnerDefinedRule>();
 		services.AddSingleton<IGovernanceRule, VersionDefinedRule>();
+		services.AddSingleton<IGovernanceRule, AgentOps.Core.Governance.Rules.RateLimitRule>();
+		services.AddSingleton<IGovernanceRule, AgentOps.Core.Governance.Rules.TimeoutRule>();
+		services.AddSingleton<IGovernanceRule, AgentOps.Core.Governance.Rules.EnvironmentScopeRule>();
 		services.AddSingleton<GovernanceRuleEngine>();
 		services.AddSingleton<ValidateAgentCommandHandler>();
 		// Register security rules and analyzer for deterministic checks
@@ -99,7 +102,13 @@ var host = Host.CreateDefaultBuilder(args)
 		// Dashboard
 		services.AddScoped<AgentOps.Application.Interfaces.IAgentFetcher>(sp =>
 			new AgentOps.Infrastructure.GitHub.GitHubAgentFetcher(sp.GetRequiredService<AgentOps.GitHub.GitHubHttpClient>()));
-		services.AddScoped<GetDashboardQueryHandler>();
+		services.AddScoped<AgentOps.Application.Interfaces.IGovernanceConfigLoader>(sp =>
+			new AgentOps.Infrastructure.Config.GovernanceConfigLoader(sp.GetRequiredService<AgentOps.GitHub.GitHubHttpClient>()));
+		services.AddScoped<GetDashboardQueryHandler>(sp =>
+			new GetDashboardQueryHandler(
+				sp.GetRequiredService<AgentOps.Application.Interfaces.IAgentFetcher>(),
+				sp.GetRequiredService<GovernanceRuleEngine>(),
+				sp.GetRequiredService<AgentOps.Application.Interfaces.IGovernanceConfigLoader>()));
 		services.AddScoped<DashboardRenderer>();
 		
 		// Register optional LLM semantic analyzer (only if Azure OpenAI is configured)
