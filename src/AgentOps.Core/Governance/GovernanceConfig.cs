@@ -19,6 +19,9 @@ namespace AgentOps.Core.Governance
         public AuditConfig       Audit        { get; set; } = new();
         public Dictionary<string, EnvironmentConfig> Environments { get; set; } = new();
 
+        /// <summary>Optional semantic analysis via Azure OpenAI.</summary>
+        public SemanticAnalysisConfig SemanticAnalysis { get; set; } = new();
+
         // ── Defaults (mirror the original hard-coded sets) ───────────────────
 
         public static readonly string[] DefaultAllowedActions = new[]
@@ -59,5 +62,24 @@ namespace AgentOps.Core.Governance
     {
         public bool         RequireHumanApproval   { get; set; } = false;
         public List<string> ForbiddenActionsExtra  { get; set; } = new();
+    }
+
+    /// <summary>Configuration for optional semantic analysis via Azure OpenAI.</summary>
+    public class SemanticAnalysisConfig
+    {
+        /// <summary>When false, semantic analysis is skipped entirely.</summary>
+        public bool Enabled { get; set; } = false;
+
+        /// <summary>
+        /// Minimum risk level at which semantic findings escalate the governance status:
+        /// LOW → no impact, MEDIUM → REVIEW, HIGH → BLOCKED.
+        /// </summary>
+        public string Threshold { get; set; } = "MEDIUM";
+
+        /// <summary>Maximum seconds to wait for the Azure OpenAI response.</summary>
+        public int TimeoutSeconds { get; set; } = 5;
+
+        /// <summary>Maximum tokens for the model completion.</summary>
+        public int MaxTokens { get; set; } = 800;
     }
 }

@@ -239,6 +239,66 @@ MIT
 
 ---
 
+## 🧠 Phase 11: Semantic Analysis (Azure OpenAI)
+
+In addition to deterministic rule checks, AgentOps Console can send the agent YAML to Azure OpenAI for a semantic governance review. The model evaluates ambiguity, missing constraints, unsafe behavior, excessive permissions, and risky operational patterns.
+
+### What it does
+
+| Semantic risk | Governance impact |
+|---|---|
+| `LOW` | No status change |
+| `MEDIUM` | APPROVED → REVIEW |
+| `HIGH` | APPROVED or REVIEW → BLOCKED |
+
+Existing rule-based `BLOCKED` results are **never overridden** by semantic analysis.
+If Azure is unavailable (missing credentials, timeout, invalid response), the rule-based result stands.
+
+### Required environment variables
+
+| Variable | Description |
+|---|---|
+| `AZURE_OPENAI_ENDPOINT` | Endpoint URL for your Azure OpenAI resource |
+| `AZURE_OPENAI_API_KEY` | API key (never hardcoded, never logged) |
+| `AZURE_OPENAI_DEPLOYMENT_NAME` | Deployment name (default: `gpt-5.4-nano`) |
+
+Copy `.env.example` to `.env` and fill in your values for local development.
+`.env` is gitignored and must never be committed.
+
+### GitHub Secrets needed
+
+Add these three secrets in **Settings → Secrets and variables → Actions**:
+
+- `AZURE_OPENAI_ENDPOINT`
+- `AZURE_OPENAI_API_KEY`
+- `AZURE_OPENAI_DEPLOYMENT_NAME`
+
+The `AI Governance Check` workflow reads them automatically. If any are absent, semantic analysis is skipped and the rule-based check continues normally.
+
+### Disable semantic analysis
+
+Set `enabled: false` in `data/governance-config.yaml`:
+
+```yaml
+governance:
+  semantic_analysis:
+    enabled: false
+```
+
+### Fallback behavior
+
+When Azure OpenAI is unavailable the report shows:
+
+```
+🧠 Semantic Analysis:
+   Status: Skipped
+   Reason: Timeout after 5s    # or: missing configuration / API error / invalid response
+```
+
+The governance check continues with rule-based results only and does not fail the PR solely because semantic analysis was unavailable.
+
+---
+
 ## 🔒 Branch Protection & Required Status Checks
 
 The **AI Governance Check** workflow (`governance-check.yml`) enforces governance rules at the GitHub merge gate. When any agent definition file changes in a PR, the workflow validates it and blocks the merge if violations are critical.
@@ -268,4 +328,4 @@ Open any PR that modifies a file under `data/agent-definitions/`. You should see
 
 ---
 
-**Version:** 0.3.0 | **Status:** Production Ready ✅
+**Version:** 0.4.0 | **Status:** Production Ready ✅

@@ -8,3 +8,6 @@
 .vscode/
 .git-tracked-files.txt
 commitmsg.txt
+
+# Local environment secrets (never commit)
+.env

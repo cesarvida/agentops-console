@@ -12,6 +12,8 @@ using AgentOps.Infrastructure.Persistence;
 using AgentOps.Core.Governance;
 using AgentOps.Core.Governance.Rules;
 using AgentOps.Application.Governance;
+using AgentOps.Application.Interfaces;
+using AgentOps.Infrastructure.Config;
 
 // Check if running in CI/non-interactive mode for PR analysis
 bool isCIPRAnalysis   = args.Length >= 4 && args[0] == "analyze-pr";
@@ -77,7 +79,7 @@ var host = Host.CreateDefaultBuilder(args)
 		services.AddSingleton<IGovernanceRule, AgentOps.Core.Governance.Rules.TimeoutRule>();
 		services.AddSingleton<IGovernanceRule, AgentOps.Core.Governance.Rules.EnvironmentScopeRule>();
 		services.AddSingleton<GovernanceRuleEngine>();
-		services.AddSingleton<ValidateAgentCommandHandler>();
+		// ValidateAgentCommandHandler registered later (after Azure OpenAI options resolved)
 		// Register security rules and analyzer for deterministic checks
 		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.PromptInjectionRule>();
 		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.ToolAbuseRule>();
@@ -111,12 +113,20 @@ var host = Host.CreateDefaultBuilder(args)
 				sp.GetRequiredService<AgentOps.Application.Interfaces.IGovernanceConfigLoader>()));
 		services.AddScoped<DashboardRenderer>();
 		
-		// Register optional LLM semantic analyzer (only if Azure OpenAI is configured)
+		// ── Azure OpenAI Governance Semantic Analyzer ────────────────────────
 		var azureOpenAIOptions = new AzureOpenAIOptions();
 		if (azureOpenAIOptions.IsConfigured)
 		{
+			// Register governance semantic analyzer (for validate-agent command)
+			services.AddSingleton<AgentOps.Application.Interfaces.IAgentSemanticAnalyzer>(sp =>
+				new AgentOps.Infrastructure.AzureOpenAI.AzureOpenAIGovernanceClient(
+					azureOpenAIOptions.Endpoint!,
+					azureOpenAIOptions.Key!,
+					azureOpenAIOptions.DeploymentName,
+					sp.GetRequiredService<ILogger<AgentOps.Infrastructure.AzureOpenAI.AzureOpenAIGovernanceClient>>()));
+			// Register legacy LLM client (for PR diff analysis)
 			services.AddSingleton<AgentOps.Application.Interfaces.ILLMClient>(sp =>
-				new AzureOpenAIClient(azureOpenAIOptions.Endpoint, azureOpenAIOptions.Key, 
+				new AzureOpenAIClient(azureOpenAIOptions.Endpoint, azureOpenAIOptions.Key,
 					sp.GetRequiredService<ILogger<AzureOpenAIClient>>()));
 			services.AddSingleton<AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer>(sp =>
 				new AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer(
@@ -124,10 +134,16 @@ var host = Host.CreateDefaultBuilder(args)
 		}
 		else
 		{
-			// Semantic analyzer without LLM client (graceful degradation)
+			// No Azure credentials — semantic analysis gracefully degraded
 			services.AddSingleton<AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer>(sp =>
 				new AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer(null));
+			// IAgentSemanticAnalyzer intentionally NOT registered — handler receives null via GetService
 		}
+		// Override ValidateAgentCommandHandler to inject the optional semantic analyzer
+		services.AddSingleton<ValidateAgentCommandHandler>(sp =>
+			new ValidateAgentCommandHandler(
+				sp.GetRequiredService<GovernanceRuleEngine>(),
+				sp.GetService<IAgentSemanticAnalyzer>()));
 	})
 	.ConfigureLogging(logging =>
 	{
@@ -223,7 +239,11 @@ else if (isValidateAgent && args.Length >= 2)
 	try
 	{
 		var command = new ValidateAgentCommand(args[1]);
-		var report = await handler.HandleAsync(command);
+
+		// Load local governance config (reads data/governance-config.yaml if present)
+		var localConfig = LocalGovernanceConfigReader.TryLoad();
+
+		var report = await handler.HandleAsync(command, localConfig);
 		DisplayGovernanceReport(report, console);
 
 		// Post PR comment when --post-comment flag is present
@@ -398,9 +418,9 @@ void DisplayGovernanceReport(AgentOps.Core.Governance.GovernanceReport report, I
 	string statusEmoji = report.FinalStatus switch
 	{
 		"APPROVED" => "✅",
-		"REVIEW" => "⚠️",
-		"BLOCKED" => "❌",
-		_ => "❓"
+		"REVIEW"   => "⚠️",
+		"BLOCKED"  => "❌",
+		_          => "❓"
 	};
 
 	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -421,19 +441,52 @@ void DisplayGovernanceReport(AgentOps.Core.Governance.GovernanceReport report, I
 			string icon = rule.Severity switch
 			{
 				AgentOps.Core.Governance.RuleSeverity.Critical => "🔴",
-				AgentOps.Core.Governance.RuleSeverity.Warning => "🟡",
-				_ => "ℹ️"
+				AgentOps.Core.Governance.RuleSeverity.Warning  => "🟡",
+				_                                              => "ℹ️"
 			};
 			console.WriteLine($"\n{icon} {rule.RuleName} ({rule.Severity})");
 			foreach (var violation in rule.Violations)
-			{
 				console.WriteLine($"  - {violation}");
-			}
 		}
 	}
 	else
 	{
 		console.WriteLine("✅ Agent passed all governance rules!");
+	}
+
+	// ── Semantic analysis section ─────────────────────────────────────────
+	console.WriteLine("");
+	console.WriteLine("🧠 Semantic Analysis:");
+	var semantic = report.SemanticAnalysis;
+	if (semantic == null || !semantic.IsAvailable)
+	{
+		console.WriteLine("   Status: Skipped");
+		if (semantic != null && !string.IsNullOrEmpty(semantic.ErrorMessage))
+			console.WriteLine($"   Reason: {semantic.ErrorMessage}");
+	}
+	else
+	{
+		string riskEmoji = semantic.RiskLevel switch
+		{
+			"HIGH"   => "🔴",
+			"MEDIUM" => "🟡",
+			_        => "🟢"
+		};
+		console.WriteLine("   Status: Available");
+		console.WriteLine($"   Risk Level: {riskEmoji} {semantic.RiskLevel}");
+
+		if (semantic.Issues.Count > 0)
+		{
+			console.WriteLine("   Issues:");
+			foreach (var issue in semantic.Issues)
+				console.WriteLine($"     - {issue}");
+		}
+		if (semantic.Recommendations.Count > 0)
+		{
+			console.WriteLine("   Recommendations:");
+			foreach (var rec in semantic.Recommendations)
+				console.WriteLine($"     - {rec}");
+		}
 	}
 
 	console.WriteLine("");

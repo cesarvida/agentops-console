@@ -45,3 +45,11 @@ governance:
         - modify_permissions
     staging:
       require_human_approval: false
+
+  # Semantic analysis via Azure OpenAI
+  # Set enabled: true and supply AZURE_OPENAI_* secrets to activate.
+  semantic_analysis:
+    enabled: true
+    threshold: MEDIUM
+    timeout_seconds: 5
+    max_tokens: 800

@@ -48,6 +48,12 @@ namespace AgentOps.Core.Governance
             => RuleResults.Any(r => !string.IsNullOrEmpty(r.ExceptionNote));
 
         /// <summary>
+        /// Optional result from Azure OpenAI semantic analysis.
+        /// Null when semantic analysis was not attempted (disabled, no credentials, etc.).
+        /// </summary>
+        public SemanticAnalysisResult? SemanticAnalysis { get; set; }
+
+        /// <summary>
         /// Converts the governance report to a markdown comment suitable for posting on GitHub PRs.
         /// </summary>
         /// <returns>A markdown-formatted string suitable for PR comments.</returns>
