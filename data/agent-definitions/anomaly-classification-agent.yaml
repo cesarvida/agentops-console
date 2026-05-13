@@ -1,0 +1,418 @@
+# ANOMALY CLASSIFICATION AGENT
+# Source: https://github.com/dshahrasebi/agentic-factory-hack/blob/main/challenge-1/agents/anomaly_classification_agent.py
+# This is the ACTUAL agent from the Microsoft Hackathon repo - extracted from Python implementation
+
+agentName: "Anomaly Classification Agent"
+version: "1.0.0"
+language: "python"
+framework: "Microsoft Agent Framework"
+
+# ═══════════════════════════════════════════════════════════════
+# METADATA
+# ═══════════════════════════════════════════════════════════════
+
+description: |
+  Evaluates machine anomalies for warning and critical threshold violations.
+  Receives anomaly data for a given machine, validates each metric against 
+  threshold values, and raises alerts for maintenance if violations are found.
+  
+  Uses Azure AI Client for multi-turn conversations and Cosmos DB for 
+  threshold and machine metadata lookups.
+
+owner: "predictive-maintenance-team@factory.com"
+team: "Manufacturing Intelligence"
+contact: "maintenance@factory.local"
+environment: "production"
+
+# ═══════════════════════════════════════════════════════════════
+# DEPLOYMENT CONFIGURATION
+# ═══════════════════════════════════════════════════════════════
+
+deployment:
+  environment: "production"
+  platform: "Azure AI Foundry"
+  runtime: "async (asyncio)"
+  scalability: "auto"
+  availability: "high"
+
+# ═══════════════════════════════════════════════════════════════
+# TOOLS (Functions available to the agent)
+# ═══════════════════════════════════════════════════════════════
+
+tools:
+  - name: "get_machine_data"
+    type: "function"
+    description: "Fetch machine information such as type for a particular machine ID"
+    parameters:
+      type: "object"
+      required: ["machine_id"]
+      properties:
+        machine_id:
+          type: "string"
+          description: "The unique identifier for the machine (e.g., machine-001)"
+    output:
+      type: "object"
+      description: "Machine metadata (id, type, model, location, status, last_maintenance)"
+    source: "cosmos_db:Machines"
+    readOnly: true
+
+  - name: "get_thresholds"
+    type: "function"
+    description: "Fetch threshold rules for different metrics per machine type"
+    parameters:
+      type: "object"
+      required: ["machine_type"]
+      properties:
+        machine_type:
+          type: "string"
+          description: "The type of machine (e.g., tire_curing_oven, extruder)"
+    output:
+      type: "array"
+      description: "Array of threshold definitions with metric, warning_value, critical_value"
+    source: "cosmos_db:Thresholds"
+    readOnly: true
+
+# ═══════════════════════════════════════════════════════════════
+# DATA CONNECTIONS
+# ═══════════════════════════════════════════════════════════════
+
+connections:
+  - name: "azure_ai_client"
+    type: "azure_ai"
+    description: "Azure AI Client for agent runtime and model inference"
+    endpoint: "${AZURE_AI_PROJECT_ENDPOINT}"
+    authentication: "AzureCliCredential"
+    required: true
+
+  - name: "cosmos_db_main"
+    type: "cosmosdb"
+    description: "Cosmos DB for machine data and threshold storage"
+    endpoint: "${COSMOS_ENDPOINT}"
+    key: "${COSMOS_KEY}"
+    database: "FactoryOpsDB"
+    containers:
+      - name: "Machines"
+        partitionKey: "/id"
+        description: "Machine metadata and status information"
+      - name: "Thresholds"
+        partitionKey: "/machineType"
+        description: "Threshold definitions for anomaly detection"
+    required: true
+    readOnly: false
+
+# ═══════════════════════════════════════════════════════════════
+# INPUT SCHEMA
+# ═══════════════════════════════════════════════════════════════
+
+input:
+  type: "object"
+  description: "Anomaly data for classification and threshold validation"
+  required: ["machine_id", "anomalies"]
+  properties:
+    machine_id:
+      type: "string"
+      description: "The ID of the machine to analyze"
+      example: "machine-001"
+    
+    anomalies:
+      type: "array"
+      description: "Array of metric anomalies detected"
+      items:
+        type: "object"
+        required: ["metric", "value"]
+        properties:
+          metric:
+            type: "string"
+            description: "Name of the metric"
+            example: "curing_temperature"
+          
+          value:
+            type: "number"
+            description: "Current value of the metric"
+            example: 179.2
+          
+          unit:
+            type: "string"
+            description: "Unit of measurement (optional)"
+            example: "°C"
+          
+          timestamp:
+            type: "string"
+            format: "iso8601"
+            description: "When the anomaly was detected (optional)"
+    
+    context:
+      type: "object"
+      description: "Additional context (optional)"
+      properties:
+        facility_id:
+          type: "string"
+        shift:
+          type: "string"
+          enum: ["morning", "afternoon", "night"]
+
+# ═══════════════════════════════════════════════════════════════
+# OUTPUT SCHEMA
+# ═══════════════════════════════════════════════════════════════
+
+output:
+  type: "object"
+  description: "Classification result with alerts and summary"
+  properties:
+    status:
+      type: "string"
+      enum: ["normal", "warning", "critical"]
+      description: "Overall anomaly status"
+    
+    alerts:
+      type: "array"
+      description: "List of threshold violations found"
+      items:
+        type: "object"
+        properties:
+          metric:
+            type: "string"
+            description: "Name of the violated metric"
+          
+          severity:
+            type: "string"
+            enum: ["warning", "critical"]
+            description: "Severity of the violation"
+          
+          value:
+            type: "number"
+            description: "Actual value recorded"
+          
+          threshold:
+            type: "number"
+            description: "Threshold that was exceeded"
+          
+          description:
+            type: "string"
+            description: "Human-readable description of the violation"
+    
+    summary:
+      type: "object"
+      properties:
+        total_records_processed:
+          type: "integer"
+          description: "Number of metrics evaluated"
+        
+        violations:
+          type: "object"
+          properties:
+            critical:
+              type: "integer"
+            warning:
+              type: "integer"
+        
+        machines_affected:
+          type: "integer"
+        
+        recommended_action:
+          type: "string"
+          description: "Recommended maintenance action"
+
+# ═══════════════════════════════════════════════════════════════
+# INSTRUCTIONS & SYSTEM PROMPT
+# ═══════════════════════════════════════════════════════════════
+
+instructions: |
+  You are an Anomaly Classification Agent evaluating machine anomalies for 
+  warning and critical threshold violations.
+  
+  TASK:
+  When you receive anomaly data for a given machine, you must:
+  1. Validate each metric against the threshold values
+  2. Raise an alert for maintenance if any critical or warning violations are found
+  3. Provide a summary with violation counts and recommended actions
+  
+  PROCESS:
+  1. Use get_machine_data() to fetch machine information (type, location, etc)
+  2. Use get_thresholds() to fetch threshold rules for that machine type
+  3. Compare each anomaly metric value against the thresholds
+  4. Classify violations as "critical" or "warning"
+  5. Return structured output with alerts and summary
+  
+  RULES:
+  - Only compare against thresholds for the specific machine type
+  - If no thresholds exist, respond with "Thresholds not configured for this machine type"
+  - Always include the original value and threshold in alerts
+  - Provide actionable recommendations (schedule maintenance, inspect, replace)
+  
+  OUTPUT FORMAT:
+  Return JSON with status (high/medium/normal), alerts array, and summary object.
+
+# ═══════════════════════════════════════════════════════════════
+# GOVERNANCE & COMPLIANCE
+# ═══════════════════════════════════════════════════════════════
+
+governance:
+  requiresAudit: true
+  requiresOwner: true
+  requiresApproval: false
+  requiresVersion: true
+  dataClassification: "internal"
+  piiHandling: "none"
+  
+  auditConfig:
+    logAllInvocations: true
+    logInputData: false  # Don't log sensor values (operational data)
+    logOutputData: true
+    retentionDays: 90
+
+# ═══════════════════════════════════════════════════════════════
+# PERFORMANCE & SCALING
+# ═══════════════════════════════════════════════════════════════
+
+performance:
+  timeout_seconds: 60
+  timeout_strategy: "fail_open"  # Return partial results if timeout
+  
+  rateLimiting:
+    requests_per_minute: 200
+    requests_per_hour: 10000
+    burst_size: 50
+  
+  resourceLimits:
+    max_concurrent: 50
+    max_database_connections: 10
+    max_api_calls_per_invocation: 5
+
+# ═══════════════════════════════════════════════════════════════
+# TESTING & VALIDATION
+# ═══════════════════════════════════════════════════════════════
+
+testCases:
+  - name: "Normal Operation"
+    input:
+      machine_id: "machine-001"
+      anomalies:
+        - metric: "curing_temperature"
+          value: 170.0
+        - metric: "cycle_time"
+          value: 14.0
+    expectedStatus: "normal"
+    expectedAlerts: 0
+
+  - name: "Warning Violation"
+    input:
+      machine_id: "machine-001"
+      anomalies:
+        - metric: "curing_temperature"
+          value: 185.0  # Above warning threshold
+        - metric: "cycle_time"
+          value: 15.0
+    expectedStatus: "warning"
+    expectedAlerts: 1
+
+  - name: "Critical Violation"
+    input:
+      machine_id: "machine-001"
+      anomalies:
+        - metric: "curing_temperature"
+          value: 195.0  # Above critical threshold
+        - metric: "cycle_time"
+          value: 14.0
+    expectedStatus: "critical"
+    expectedAlerts: 1
+
+# ═══════════════════════════════════════════════════════════════
+# INTEGRATION POINTS
+# ═══════════════════════════════════════════════════════════════
+
+integration:
+  publishes:
+    - topic: "anomalies.detected"
+      format: "json"
+      filter: "status != 'normal'"
+      
+    - topic: "alerts.maintenance"
+      format: "json"
+      filter: "severity = 'critical'"
+
+  subscribes:
+    - topic: "telemetry.ingested"
+      format: "json"
+      
+    - topic: "thresholds.updated"
+      format: "json"
+
+# ═══════════════════════════════════════════════════════════════
+# DEPENDENCIES & REQUIREMENTS
+# ═══════════════════════════════════════════════════════════════
+
+requirements:
+  python: ">=3.10"
+  packages:
+    - name: "azure-ai-projects"
+      version: ">=1.0.0"
+    - name: "azure-cosmos"
+      version: ">=4.0.0"
+    - name: "azure-identity"
+      version: ">=1.15.0"
+    - name: "python-dotenv"
+      version: ">=1.0.0"
+
+environment_variables:
+  required:
+    - "AZURE_AI_PROJECT_ENDPOINT"
+    - "COSMOS_ENDPOINT"
+    - "COSMOS_KEY"
+  optional:
+    - "LOG_LEVEL"
+    - "DEBUG_MODE"
+
+# ═══════════════════════════════════════════════════════════════
+# DOCUMENTATION & EXAMPLES
+# ═══════════════════════════════════════════════════════════════
+
+documentation:
+  source: "https://github.com/dshahrasebi/agentic-factory-hack/blob/main/challenge-1/agents/anomaly_classification_agent.py"
+  challenge: "challenge-1"
+  use_case: "Real-time IoT anomaly detection for tire manufacturing"
+
+examples:
+  - name: "Basic Anomaly Classification"
+    request: |
+      {
+        "machine_id": "machine-001",
+        "anomalies": [
+          {"metric": "curing_temperature", "value": 179.2},
+          {"metric": "cycle_time", "value": 14.5}
+        ]
+      }
+    
+    response: |
+      {
+        "status": "warning",
+        "alerts": [
+          {
+            "metric": "curing_temperature",
+            "severity": "warning",
+            "value": 179.2,
+            "threshold": 175.0,
+            "description": "Temperature approaching warning threshold"
+          }
+        ],
+        "summary": {
+          "total_records_processed": 2,
+          "violations": {"critical": 0, "warning": 1},
+          "machines_affected": 1,
+          "recommended_action": "Increase monitoring frequency. Schedule preventive maintenance within 2 hours."
+        }
+      }
+
+# ═══════════════════════════════════════════════════════════════
+# VERSIONING & CHANGE HISTORY
+# ═══════════════════════════════════════════════════════════════
+
+changelog:
+  - version: "1.0.0"
+    date: "2026-05-13"
+    status: "production"
+    changes:
+      - "Initial version extracted from GitHub hackathon repo"
+      - "Full YAML specification with tools, connections, schemas"
+      - "Comprehensive test cases and examples"
+      - "Azure AI Foundry integration ready"
