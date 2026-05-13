@@ -71,9 +71,10 @@ namespace AgentOps.CLI.Interactive
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine("  → data/agent-definitions/compliant-agent.yaml");
                 Console.WriteLine("  → ./mi-agente.json");
+                Console.WriteLine("  → https://raw.githubusercontent.com/owner/repo/path/agent.yaml");
                 Console.ResetColor();
                 Console.WriteLine();
-                Console.Write("Ruta del agente: ");
+                Console.Write("Ruta o URL del agente: ");
 
                 string? filePath = Console.ReadLine();
                 if (filePath == null) return (null, null);
@@ -88,7 +89,27 @@ namespace AgentOps.CLI.Interactive
 
                 try
                 {
-                    var (agent, _) = await AgentDefinitionLoader.LoadWithContextAsync(filePath);
+                    AgentDefinition? agent = null;
+                    
+                    // Detectar si es URL o ruta local
+                    if (filePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                        filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Cargar desde URL
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.Gray;
+                        Console.WriteLine($"📥 Descargando agente desde GitHub...");
+                        Console.ResetColor();
+                        
+                        agent = await AgentDefinitionLoader.LoadFromUrlAsync(filePath);
+                    }
+                    else
+                    {
+                        // Cargar desde archivo local
+                        var (loadedAgent, _) = await AgentDefinitionLoader.LoadWithContextAsync(filePath);
+                        agent = loadedAgent;
+                    }
+
                     if (agent == null)
                     {
                         PrintError("No se pudo cargar el agente.");

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -47,9 +48,10 @@ namespace AgentOps.Application.Governance
         }
 
         /// <summary>
-        /// Executes the validation of an agent definition from a file (YAML or JSON).
+        /// Executes the validation of an agent definition from a file or URL (YAML or JSON).
+        /// Supports both local file paths and GitHub raw URLs.
         /// </summary>
-        /// <param name="command">The validation command with file path.</param>
+        /// <param name="command">The validation command with file path or URL.</param>
         /// <param name="config">
         /// Optional governance config.  When null the engine uses its default config
         /// and semantic analysis is skipped.
@@ -62,16 +64,40 @@ namespace AgentOps.Application.Governance
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
 
-            if (!File.Exists(command.YamlPath))
-                throw new FileNotFoundException($"Agent definition file not found: {command.YamlPath}");
+            // Detect if it's a URL or local file path
+            bool isUrl = command.YamlPath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                         command.YamlPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
 
-            var agent = await AgentDefinitionLoader.LoadAsync(command.YamlPath);
+            AgentDefinition? agent = null;
+            string yaml = string.Empty;
+
+            try
+            {
+                if (isUrl)
+                {
+                    // Load from URL
+                    agent = await AgentDefinitionLoader.LoadFromUrlAsync(command.YamlPath);
+                    // For semantic analysis, we need the YAML content
+                    using var client = new System.Net.Http.HttpClient();
+                    yaml = await client.GetStringAsync(command.YamlPath);
+                }
+                else
+                {
+                    // Load from local file
+                    if (!File.Exists(command.YamlPath))
+                        throw new FileNotFoundException($"Agent definition file not found: {command.YamlPath}");
+
+                    agent = await AgentDefinitionLoader.LoadAsync(command.YamlPath);
+                    yaml = await File.ReadAllTextAsync(command.YamlPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to load agent from {(isUrl ? "URL" : "file")}: {command.YamlPath}", ex);
+            }
 
             if (agent == null)
-                throw new InvalidOperationException("Failed to deserialize agent definition from file");
-
-            // Read the raw content for semantic analysis
-            var yaml = await File.ReadAllTextAsync(command.YamlPath);
+                throw new InvalidOperationException("Failed to deserialize agent definition");
 
             // ── 1. Rule-based governance evaluation ──────────────────────────
             var report = config != null

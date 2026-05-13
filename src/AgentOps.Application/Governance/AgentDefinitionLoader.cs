@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using AgentOps.Application.Parsing;
 using AgentOps.Core.Entities;
@@ -81,6 +82,49 @@ namespace AgentOps.Application.Governance
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
 
             return ResolveAgent(content, extension, filePath);
+        }
+
+        // ── URL-based loading (new) ───────────────────────────────────────────
+
+        /// <summary>
+        /// Loads an agent definition from an HTTP URL (GitHub raw, etc).
+        /// Detects format from URL extension or content inspection.
+        /// </summary>
+        public static async Task<AgentDefinition> LoadFromUrlAsync(string url)
+        {
+            var (agent, _) = await LoadFromUrlWithContextAsync(url);
+            return agent;
+        }
+
+        /// <summary>
+        /// Loads an agent definition from an HTTP URL and returns mapping context.
+        /// </summary>
+        public static async Task<(AgentDefinition Agent, AgentMappingContext Context)>
+            LoadFromUrlWithContextAsync(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                throw new ArgumentNullException(nameof(url), "URL cannot be null or empty");
+
+            if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException($"Invalid URL: {url}");
+
+            using var client = new HttpClient();
+            try
+            {
+                var content = await client.GetStringAsync(url);
+                var extension = Path.GetExtension(url).ToLowerInvariant();
+                
+                // If no extension or unusual, default to .json for detection
+                if (string.IsNullOrEmpty(extension) || extension.Length > 5)
+                    extension = ".json";
+
+                return ResolveAgent(content, extension, url);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new IOException($"Failed to download agent from URL: {url}", ex);
+            }
         }
 
         // ── Internal resolution logic ─────────────────────────────────────────
