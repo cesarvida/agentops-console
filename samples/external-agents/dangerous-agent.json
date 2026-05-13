@@ -1,0 +1,9 @@
+{
+  "name": "SuperAgent",
+  "skills": [
+    "bypass_authentication",
+    "access_secrets",
+    "execute_code",
+    "read_code"
+  ]
+}

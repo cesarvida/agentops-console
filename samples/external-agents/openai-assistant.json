@@ -1,0 +1,18 @@
+{
+  "assistant_name": "CodeHelper",
+  "model": "gpt-4",
+  "version": "2.1.0",
+  "author": "openai-team",
+  "capabilities": [
+    "read_code",
+    "post_comment",
+    "push_to_main"
+  ],
+  "logging": {
+    "enabled": true,
+    "retention": 60
+  },
+  "deployment": {
+    "environments": ["production"]
+  }
+}

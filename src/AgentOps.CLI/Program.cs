@@ -14,14 +14,16 @@ using AgentOps.Core.Governance.Rules;
 using AgentOps.Application.Governance;
 using AgentOps.Application.Interfaces;
 using AgentOps.Infrastructure.Config;
+using AgentOps.Application.Parsing;
 
 // Check if running in CI/non-interactive mode for PR analysis
 bool isCIPRAnalysis   = args.Length >= 4 && args[0] == "analyze-pr";
 bool isValidateAgent  = args.Length >= 2 && args[0] == "validate-agent";
 bool isDashboard      = args.Length >= 1 && args[0] == "dashboard";
 
-// Parse optional --post-comment flags for validate-agent mode
+// Parse optional flags for validate-agent mode
 bool postComment = args.Contains("--post-comment");
+bool externalMode = args.Contains("--external");
 int prNumberArg = 0;
 string prOwnerArg = string.Empty;
 string prRepoArg = string.Empty;
@@ -243,8 +245,24 @@ else if (isValidateAgent && args.Length >= 2)
 		// Load local governance config (reads data/governance-config.yaml if present)
 		var localConfig = LocalGovernanceConfigReader.TryLoad();
 
+		// When --external is set, load the mapping context before running governance
+		AgentMappingContext? externalContext = null;
+		if (externalMode)
+		{
+			try
+			{
+				var (_, ctx) = await AgentDefinitionLoader.LoadWithContextAsync(args[1]);
+				externalContext = ctx;
+			}
+			catch { /* context is optional — don't fail if it errors */ }
+		}
+
 		var report = await handler.HandleAsync(command, localConfig);
 		DisplayGovernanceReport(report, console);
+
+		// Display external format analysis when --external flag was set
+		if (externalMode && externalContext != null)
+			DisplayExternalAnalysis(externalContext, console);
 
 		// Post PR comment when --post-comment flag is present
 		if (postComment && prNumberArg > 0 && !string.IsNullOrEmpty(prOwnerArg) && !string.IsNullOrEmpty(prRepoArg))
@@ -489,6 +507,38 @@ void DisplayGovernanceReport(AgentOps.Core.Governance.GovernanceReport report, I
 		}
 	}
 
+	console.WriteLine("");
+}
+
+// Display external format analysis section
+void DisplayExternalAnalysis(AgentMappingContext ctx, IConsoleWriter console)
+{
+	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+	console.WriteLine("   📋 Análisis de Formato Externo");
+	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+	console.WriteLine($"Formato detectado:   {ctx.DetectedFormat}");
+	console.WriteLine($"Modo:                {(ctx.UsedFlexibleMapper ? "Flexible mapper (formato externo)" : "Parser estricto (formato nativo)")}");
+
+	int recognized = ctx.RecognizedFieldCount;
+	int total      = ctx.RecognizedFields.Count + ctx.UnrecognizedFields.Count;
+	console.WriteLine($"Campos reconocidos:  {string.Join(", ", ctx.RecognizedFields)} ({recognized}/{total})");
+
+	if (ctx.UnrecognizedFields.Count > 0)
+		console.WriteLine($"Campos no reconocidos: {string.Join(", ", ctx.UnrecognizedFields)}");
+
+	if (ctx.MappingNotes.Count > 0)
+	{
+		console.WriteLine("Mapeo aplicado:");
+		foreach (var note in ctx.MappingNotes)
+			console.WriteLine($"  - {note}");
+	}
+
+	if (ctx.UsedFlexibleMapper)
+		console.WriteLine(
+			"\nNota: Este agente usa un formato externo. " +
+			"Los campos mapeados pueden no reflejar el 100% de la intención original.");
+
+	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 	console.WriteLine("");
 }
 

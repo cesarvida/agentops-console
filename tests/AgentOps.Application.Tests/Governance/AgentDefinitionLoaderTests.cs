@@ -172,8 +172,7 @@ tools:
                 var yamlAgent = await AgentDefinitionLoader.LoadAsync(yamlFile);
                 var jsonAgent = await AgentDefinitionLoader.LoadAsync(jsonFile);
 
-                // Assert - Core properties
-                Assert.Equal(yamlAgent.Id.Value, jsonAgent.Id.Value);
+                // Assert - Core properties (Id will differ — each strict call generates new Guid)
                 Assert.Equal(yamlAgent.Name, jsonAgent.Name);
                 Assert.Equal(yamlAgent.Version, jsonAgent.Version);
                 Assert.Equal(yamlAgent.Description, jsonAgent.Description);
@@ -216,20 +215,21 @@ tools:
         }
 
         [Fact]
-        public async Task LoadAsync_UnsupportedExtension_ThrowsNotSupportedException()
+        public async Task LoadAsync_UnsupportedExtension_UsesFlexibleMapper()
         {
-            // Arrange
+            // The loader now accepts any extension via the flexible mapper fallback.
+            // A .txt file containing valid YAML should return an AgentDefinition.
             var tempFile = Path.Combine(Path.GetTempPath(), $"test-agent-{Guid.NewGuid():N}.txt");
             try
             {
                 await File.WriteAllTextAsync(tempFile, YamlApprovedAgent);
 
-                // Act & Assert
-                var ex = await Assert.ThrowsAsync<NotSupportedException>(
-                    () => AgentDefinitionLoader.LoadAsync(tempFile));
+                // Act — should NOT throw (flexible mapper handles it)
+                var agent = await AgentDefinitionLoader.LoadAsync(tempFile);
 
-                Assert.Contains("Unsupported", ex.Message);
-                Assert.Contains(".txt", ex.Message);
+                Assert.NotNull(agent);
+                // The flexible mapper should detect the name
+                Assert.Equal("Test Approved Agent", agent.Name);
             }
             finally
             {
