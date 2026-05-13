@@ -7,6 +7,7 @@ using AgentOps.CLI;
 using AgentOps.CLI.Options;
 using AgentOps.CLI.Dashboard;
 using AgentOps.CLI.Rules;
+using AgentOps.CLI.Interactive;
 using AgentOps.Application.UseCases.CreateAgentDefinition;
 using AgentOps.Application.UseCases.ViewAuditTrail;
 using AgentOps.Application.Dashboard;
@@ -176,6 +177,9 @@ var host = Host.CreateDefaultBuilder(args)
 			new ValidateAgentCommandHandler(
 				sp.GetRequiredService<GovernanceRuleEngine>(),
 				sp.GetService<IAgentSemanticAnalyzer>()));
+		
+		// ── Interactive Agent Analyzer Wizard ──────────────────────────────
+		services.AddScoped<AgentAnalyzerWizard>();
 	})
 	.ConfigureLogging(logging =>
 	{
@@ -398,6 +402,7 @@ else if (isDashboard)
 else
 {
 	// Interactive menu mode
+	console.WriteLine("🔍 Analizar un agente");
 	console.WriteLine("1) Create New Agent Definition");
 	console.WriteLine("2) List Agent Definitions");
 	console.WriteLine("3) Exit");
@@ -409,10 +414,15 @@ else
 	console.WriteLine("9) Validate Agent Governance (YAML)");
 	console.WriteLine("10) 📊 Dashboard de agentes");
 	console.WriteLine("");
-	console.WriteLine("Select option: ");
+	console.WriteLine("Select option (or 0 for Agent Analyzer): ");
 	var opt = Console.ReadLine();
 
-	if (opt == "1")
+	if (opt == "0")
+	{
+		var wizard = host.Services.GetRequiredService<AgentAnalyzerWizard>();
+		await wizard.RunAsync();
+	}
+	else if (opt == "1")
 	{
 		await createAgentCmd.ExecuteAsync();
 	}
