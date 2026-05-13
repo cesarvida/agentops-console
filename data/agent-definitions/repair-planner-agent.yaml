@@ -1,0 +1,159 @@
+# Repair Planner Agent - Intelligent Predictive Maintenance
+# Translates fault diagnosis into actionable repair plans
+
+name: "Repair Planner Agent"
+version: "1.0.0"
+owner: "operations-team@factory.com"
+environment: "production"
+
+description: |
+  Converts diagnosed faults into actionable repair plans with required parts, 
+  estimated effort, required skills/certifications, and work order generation.
+  Allocates resources based on availability and assigns technicians with proper 
+  skills and certifications.
+  
+  Source: challenge-2/RepairPlanner/RepairPlannerAgent.cs
+  Technology: C# with Microsoft.Agents.AI Framework
+  Database: Cosmos DB
+  Model: Foundry Prompt Agent (gpt-4.1)
+
+configuration:
+  owner: "operations-team@factory.com"
+  email: "repair-planning@factory.com"
+  team: "Operations"
+  slack_channel: "#repair-planning"
+  database_connection: "cosmosdb://factory-operations"
+
+tools:
+  - name: "GetAvailableTechnicians"
+    description: "Query Cosmos DB for technicians with required skills and certifications"
+    scope: "read"
+    timeout_seconds: 30
+    
+  - name: "GetAvailableParts"
+    description: "Check parts inventory and availability from Cosmos DB"
+    scope: "read"
+    timeout_seconds: 30
+    
+  - name: "QueryHistoricalData"
+    description: "Search historical maintenance data for similar repairs"
+    scope: "read"
+    
+  - name: "CreateWorkOrder"
+    description: "Save work order to Cosmos DB with all details"
+    scope: "write"
+    timeout_seconds: 15
+    
+  - name: "UpdateInventory"
+    description: "Reserve parts when assigning to work order"
+    scope: "write"
+    timeout_seconds: 15
+    
+  - name: "NotifyTechnicians"
+    description: "Send notifications to assigned technicians"
+    scope: "write"
+
+connections:
+  - name: "cosmos-operations"
+    type: "database"
+    description: "Cosmos DB for operational data"
+    
+  - name: "technician-registry"
+    type: "cache"
+    description: "Cached technician skills and availability"
+    
+  - name: "parts-inventory"
+    type: "database"
+    description: "Parts inventory system"
+
+input_schema:
+  - fault_diagnosis: "object"
+    machine_id: "string"
+    severity: "string"
+    required_skills: "array of strings"
+    estimated_effort_hours: "integer"
+
+output_schema:
+  workOrderNumber: "string"
+  machineId: "string"
+  title: "string"
+  description: "string"
+  type: "corrective|preventive|emergency"
+  estimatedEffort: "integer (hours)"
+  requiredSkills: "array"
+  requiredParts:
+    - part_number: "string"
+      quantity: "integer"
+      description: "string"
+      unitCost: "float"
+      inStock: "boolean"
+  assignedTechnicians:
+    - technician_id: "string"
+      name: "string"
+      certification: "string"
+      availability_window: "ISO 8601"
+  timeline: "string"
+  totalEstimatedCost: "float"
+  detectedAt: "ISO 8601"
+  priority: "URGENT|HIGH|MEDIUM|LOW"
+
+rules:
+  - type: "audit_logging"
+    enabled: true
+    log_all_assignments: true
+    log_inventory_changes: true
+    
+  - type: "rate_limiting"
+    requests_per_minute: 100
+    work_orders_per_day: 1000
+    
+  - type: "timeout"
+    max_seconds: 180
+    technician_query_timeout: 30
+    inventory_check_timeout: 30
+    work_order_creation_timeout: 15
+    
+  - type: "data_retention"
+    retention_days: 365
+    archive_completed_orders: true
+    
+  - type: "access_control"
+    allowed_data_sources:
+      - technician_profiles
+      - parts_inventory
+      - work_order_templates
+      - machine_specs
+      - maintenance_history
+    forbidden_data_sources:
+      - technician_salaries
+      - employee_evaluations
+      - customer_data
+      - credentials
+      - credentials
+
+  - type: "resource_allocation"
+    require_matching_skills: true
+    require_certifications: true
+    max_concurrent_assignments_per_tech: 3
+    respect_availability_windows: true
+    
+  - type: "cost_optimization"
+    enable_part_consolidation: true
+    prefer_in_stock_parts: true
+    warn_on_high_cost: 5000  # Warn if > $5000
+
+deployment:
+  platform: "Azure"
+  language: "C#"
+  framework: "Microsoft.Agents.AI"
+  database: "Cosmos DB"
+  instance_count: 2
+  memory_mb: 1024
+  cpu_cores: 2
+
+quality_gates:
+  require_skill_validation: true
+  require_certification_check: true
+  max_unfilled_positions: 0
+  escalate_if_no_available_tech: true
+  escalate_if_parts_missing: true

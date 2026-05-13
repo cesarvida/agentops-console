@@ -1,0 +1,172 @@
+# Maintenance Scheduler Agent - Intelligent Predictive Maintenance
+# Optimizes maintenance scheduling based on risk, availability, and production constraints
+
+name: "Maintenance Scheduler Agent"
+version: "1.0.0"
+owner: "operations-team@factory.com"
+environment: "production"
+
+description: |
+  Analyzes work orders, historical maintenance patterns, and technician availability 
+  to recommend optimal maintenance schedules. Minimizes production impact while 
+  managing risk and coordinating with production planning.
+  
+  Source: challenge-3/agents/maintenance_scheduler_agent.py
+  Language: Python
+  Model: gpt-4.1 (Foundry Prompt Agent)
+  Framework: Microsoft Agent Framework with A2A (Agent-to-Agent) protocol
+  Database: Cosmos DB
+
+configuration:
+  owner: "operations-team@factory.com"
+  email: "scheduling@factory.com"
+  team: "Operations Planning"
+  slack_channel: "#maintenance-schedule"
+  database_connection: "cosmosdb://factory-operations"
+  a2a_protocol: "HTTP (.well-known/agent-card.json)"
+
+tools:
+  - name: "get_work_orders"
+    description: "Retrieve pending work orders from Cosmos DB"
+    scope: "read"
+    
+  - name: "query_maintenance_history"
+    description: "Query historical maintenance patterns and timing"
+    scope: "read"
+    
+  - name: "check_technician_availability"
+    description: "Check technician schedules and availability windows"
+    scope: "read"
+    
+  - name: "analyze_production_calendar"
+    description: "Query production schedule for available maintenance windows"
+    scope: "read"
+    
+  - name: "calculate_risk_score"
+    description: "Compute risk score for different scheduling options"
+    scope: "read"
+    
+  - name: "create_maintenance_schedule"
+    description: "Save recommended schedule to database"
+    scope: "write"
+    
+  - name: "notify_stakeholders"
+    description: "Send schedule notifications to operations team"
+    scope: "write"
+
+connections:
+  - name: "work-order-db"
+    type: "Cosmos DB"
+    description: "Work order data"
+    
+  - name: "maintenance-history-db"
+    type: "Cosmos DB"
+    description: "Historical maintenance records"
+    
+  - name: "technician-schedule-db"
+    type: "Cosmos DB"
+    description: "Technician availability"
+    
+  - name: "production-schedule-api"
+    type: "REST API"
+    description: "Production calendar and constraints"
+
+input_schema:
+  - work_order_id: "string"
+    required_effort_hours: "integer"
+    required_skills: "array"
+    machine_id: "string"
+    priority: "URGENT|HIGH|MEDIUM|LOW"
+    failure_probability: "0-1"
+
+output_schema:
+  ScheduleId: "string"
+  WorkOrder: "string"
+  ScheduledStartDate: "ISO 8601"
+  EstimatedDuration: "integer (hours)"
+  AssignedTechnicians:
+    - technician_id: "string"
+      name: "string"
+  ProductionImpact: "Low|Medium|High"
+  RiskScore: "0-100"
+  FailureProbability: "0-1"
+  RecommendedAction: "URGENT|SCHEDULED|DEFERRED"
+  Reasoning: "string"
+  MaintenanceWindows:
+    - start: "ISO 8601"
+      end: "ISO 8601"
+      impact: "string"
+  AlternativeSchedules: "array"
+  CriticalPath: "array"
+
+rules:
+  - type: "audit_logging"
+    enabled: true
+    log_all_recommendations: true
+    log_schedule_changes: true
+    
+  - type: "rate_limiting"
+    requests_per_minute: 120
+    schedules_per_day: 500
+    
+  - type: "timeout"
+    max_seconds: 300
+    history_query_timeout: 60
+    availability_check_timeout: 45
+    risk_calculation_timeout: 60
+    
+  - type: "data_retention"
+    retention_days: 365
+    
+  - type: "access_control"
+    allowed_data_sources:
+      - work_orders
+      - maintenance_history
+      - technician_availability
+      - production_schedule
+      - machine_status
+    forbidden_data_sources:
+      - employee_personal_data
+      - salary_information
+      - customer_data
+      - credentials
+      
+  - type: "scheduling_constraints"
+    minimize_production_disruption: true
+    respect_safety_protocols: true
+    respect_technician_shifts: true
+    respect_maintenance_windows: true
+    max_consecutive_hours: 12
+    required_rest_between_shifts: 8
+    
+  - type: "optimization"
+    minimize_downtime: true
+    maximize_technician_utilization: true
+    consider_cost: true
+    consider_risk: true
+    weighting:
+      downtime: 0.4
+      risk: 0.3
+      cost: 0.2
+      availability: 0.1
+
+deployment:
+  platform: "Azure"
+  language: "Python"
+  framework: "Microsoft Agent Framework"
+  communication: "A2A Protocol (HTTP)"
+  database: "Cosmos DB"
+  instance_count: 2
+  memory_mb: 768
+  cpu_cores: 2
+
+health_checks:
+  - interval_seconds: 300
+    check_work_order_queue: true
+    check_technician_data: true
+    check_production_schedule_sync: true
+
+performance_metrics:
+  target_schedule_creation_time_seconds: 60
+  target_optimization_time_seconds: 90
+  target_accuracy: 0.95

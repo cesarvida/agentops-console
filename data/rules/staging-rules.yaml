@@ -1,0 +1,228 @@
+# STAGING ENVIRONMENT RULES
+# Moderate rules for pre-production testing
+# Use: dotnet run -- analyze --rules data/rules/staging-rules.yaml
+
+agentName: "Factory Agents - Staging"
+environment: "staging"
+version: "1.0.0"
+author: "Predictive Maintenance Team"
+
+description: |
+  Balanced governance rules for the staging environment.
+  Simulates production constraints while allowing some flexibility for testing.
+  Staging is production-like but with real data (replicated from PROD).
+
+# ═══════════════════════════════════════════════════════════════
+# ALLOWED ACTIONS (Production-like whitelist)
+# ═══════════════════════════════════════════════════════════════
+
+allowedActions:
+  # Anomaly Detection Agent
+  - read_telemetry
+  - read_machine_data
+  - classify_anomaly
+  - raise_alert
+  - query_thresholds
+  - log_anomaly
+  
+  # Fault Diagnosis Agent
+  - query_machine_data
+  - search_knowledge_base
+  - query_historical_faults
+  - create_fault_report
+  
+  # Repair Planner Agent
+  - get_available_technicians
+  - get_available_parts
+  - query_historical_data
+  - create_work_order
+  - update_inventory
+  - notify_technicians
+  
+  # Maintenance Scheduler Agent
+  - get_work_orders
+  - query_maintenance_history
+  - check_technician_availability
+  - analyze_production_calendar
+  - calculate_risk_score
+  - create_maintenance_schedule
+  - notify_stakeholders
+  
+  # Parts Ordering Agent
+  - get_work_order_details
+  - check_inventory_levels
+  - query_supplier_catalog
+  - calculate_costs
+  - optimize_order
+  - create_parts_order
+  - update_inventory_forecast
+  
+  # General (limited)
+  - read_logs
+
+# ═══════════════════════════════════════════════════════════════
+# FORBIDDEN ACTIONS (Strict boundaries)
+# ═══════════════════════════════════════════════════════════════
+
+forbiddenActions:
+  # Absolutely forbidden
+  - access_production_database      # Never mix with PROD
+  - delete_permanent_data           # Never delete records
+  - delete_machine_data             # Never delete specs
+  - modify_historical_records       # Cannot rewrite history
+  - access_employee_salaries        # PII forbidden
+  - access_customer_data            # PII forbidden
+  - access_personal_information     # All PII forbidden
+  - store_credentials               # Never store secrets
+  - access_secrets                  # Never access secrets
+  - bypass_audit                    # Never disable audit trail
+  - execute_arbitrary_code          # Never execute code
+  
+  # Limited operations
+  - reset_databases                 # No resets in staging
+  - bulk_delete_orders              # No bulk deletes
+  - modify_supplier_pricing         # Read-only pricing
+  - cancel_live_orders              # No cancellations
+
+# ═══════════════════════════════════════════════════════════════
+# GOVERNANCE REQUIREMENTS
+# ═══════════════════════════════════════════════════════════════
+
+governance:
+  requireOwner: true                # Must have clear ownership
+  requireAudit: true                # Must have full audit trail
+  requireApproval: false            # No approval needed, but logged
+  requireVersion: true              # Must have valid version
+
+# ═══════════════════════════════════════════════════════════════
+# AUDIT & LOGGING
+# ═══════════════════════════════════════════════════════════════
+
+audit:
+  enabled: true
+  logLevel: "INFO"                  # Standard logging
+  trackDataAccess: true
+  retention_days: 90                # Keep 90 days
+  compress_after_days: 30
+  require_audit_on_critical: true
+
+# ═══════════════════════════════════════════════════════════════
+# RATE LIMITING (Production-like limits)
+# ═══════════════════════════════════════════════════════════════
+
+rateLimiting:
+  # Anomaly Detection Agent
+  anomaly_detection: 200/minute
+  alerts: 80/minute
+  
+  # Fault Diagnosis Agent
+  diagnosis_queries: 150/minute
+  
+  # Repair Planner Agent
+  work_orders: 20/hour
+  technician_queries: 100/minute
+  
+  # Maintenance Scheduler Agent
+  schedule_creations: 30/hour
+  availability_checks: 100/minute
+  
+  # Parts Ordering Agent
+  parts_orders: 10/hour
+  supplier_queries: 50/minute
+
+# ═══════════════════════════════════════════════════════════════
+# TIMEOUT SETTINGS (Production-like timeouts)
+# ═══════════════════════════════════════════════════════════════
+
+timeout:
+  anomaly_detection: 120s
+  fault_diagnosis: 120s
+  repair_planning: 180s
+  scheduling: 180s
+  parts_ordering: 180s
+  
+  database_query: 45s
+  api_call: 45s
+  external_service: 90s
+
+# ═══════════════════════════════════════════════════════════════
+# DATA PROTECTION
+# ═══════════════════════════════════════════════════════════════
+
+dataProtection:
+  - rule: "USE_REPLICATED_DATA"
+    description: "Use data replicated from PROD, not real-time PROD"
+    severity: "CRITICAL"
+    
+  - rule: "NO_REAL_PII"
+    description: "Employee data should be anonymized"
+    severity: "HIGH"
+    
+  - rule: "ISOLATED_SUPPLIERS"
+    description: "Use staging supplier accounts, not production"
+    severity: "HIGH"
+    
+  - rule: "MOCK_NOTIFICATIONS"
+    description: "Notifications to test addresses, not real technicians"
+    severity: "MEDIUM"
+
+# ═══════════════════════════════════════════════════════════════
+# COST TRACKING
+# ═══════════════════════════════════════════════════════════════
+
+cost:
+  warn_on_consumption: 5000         # Warn if $5k/day
+  alert_on_consumption: 20000       # Alert if $20k/day
+  budget_cap: 50000                 # Hard cap at $50k/day
+  track_model_calls: true
+  track_database_operations: true
+
+# ═══════════════════════════════════════════════════════════════
+# RESOURCE MANAGEMENT
+# ═══════════════════════════════════════════════════════════════
+
+resources:
+  max_concurrent_requests: 50
+  max_database_connections: 20
+  max_api_connections: 30
+  cpu_limit_per_agent: 2
+  memory_limit_per_agent: 512MB
+
+# ═══════════════════════════════════════════════════════════════
+# DEPLOYMENT SETTINGS
+# ═══════════════════════════════════════════════════════════════
+
+deployment:
+  environment: "staging"
+  auto_scale: true
+  min_instances: 1
+  max_instances: 3
+  allow_experimental_features: false
+  allow_debug_mode: false
+  capture_detailed_traces: true
+  require_health_check: true
+
+# ═══════════════════════════════════════════════════════════════
+# QUALITY GATES
+# ═══════════════════════════════════════════════════════════════
+
+qualityGates:
+  require_skill_validation: true
+  require_certification_check: true
+  test_alert_delivery: true
+  test_notification_delivery: true
+  validate_all_api_calls: true
+  simulate_production_load: true
+
+# ═══════════════════════════════════════════════════════════════
+# MONITORING & ALERTS
+# ═══════════════════════════════════════════════════════════════
+
+monitoring:
+  enable_alerts: true
+  alert_on_errors: true
+  alert_on_timeouts: true
+  alert_on_rate_limit: true
+  alert_on_budget_exceeded: true
+  slack_channel: "#staging-alerts"
+  email: "staging-alerts@factory.com"

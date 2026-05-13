@@ -1,0 +1,204 @@
+# DEVELOPMENT ENVIRONMENT RULES
+# Permissive rules for testing and experimentation
+# Use: dotnet run -- analyze --rules data/rules/dev-rules.yaml
+
+agentName: "Factory Agents - Development"
+environment: "development"
+version: "1.0.0"
+author: "Predictive Maintenance Team"
+
+description: |
+  Permissive governance rules for the development environment.
+  Allows experimentation while maintaining basic safety guardrails.
+  All agents in DEV are trusted and under supervision.
+
+# ═══════════════════════════════════════════════════════════════
+# ALLOWED ACTIONS (Liberal whitelist for experimentation)
+# ═══════════════════════════════════════════════════════════════
+
+allowedActions:
+  # Anomaly Detection Agent
+  - read_telemetry
+  - read_machine_data
+  - classify_anomaly
+  - raise_alert
+  - test_alert_system
+  - query_thresholds
+  - log_anomaly
+  
+  # Fault Diagnosis Agent
+  - query_machine_data
+  - search_knowledge_base
+  - query_historical_faults
+  - create_fault_report
+  - test_diagnosis_logic
+  
+  # Repair Planner Agent
+  - get_available_technicians
+  - get_available_parts
+  - query_historical_data
+  - create_work_order
+  - update_inventory
+  - notify_technicians
+  - test_resource_allocation
+  
+  # Maintenance Scheduler Agent
+  - get_work_orders
+  - query_maintenance_history
+  - check_technician_availability
+  - analyze_production_calendar
+  - calculate_risk_score
+  - create_maintenance_schedule
+  - notify_stakeholders
+  - test_scheduling_logic
+  
+  # Parts Ordering Agent
+  - get_work_order_details
+  - check_inventory_levels
+  - query_supplier_catalog
+  - calculate_costs
+  - optimize_order
+  - create_parts_order
+  - update_inventory_forecast
+  - test_procurement_logic
+  
+  # General
+  - read_logs
+  - create_test_data
+  - reset_test_database
+  - run_diagnostics
+
+# ═══════════════════════════════════════════════════════════════
+# FORBIDDEN ACTIONS (Only critical safety boundaries)
+# ═══════════════════════════════════════════════════════════════
+
+forbiddenActions:
+  # Absolute no-nos even in DEV
+  - access_production_database      # Never mix DEV and PROD data
+  - delete_permanent_data           # Never delete historical records
+  - access_employee_salaries        # PII always forbidden
+  - access_customer_data            # PII always forbidden
+  - store_credentials               # Never store API keys
+  - access_secrets                  # Never store secrets
+
+# ═══════════════════════════════════════════════════════════════
+# GOVERNANCE REQUIREMENTS
+# ═══════════════════════════════════════════════════════════════
+
+governance:
+  requireOwner: false               # Optional in DEV
+  requireAudit: false               # Optional in DEV
+  requireApproval: false            # No approval needed
+  requireVersion: false             # Flexible versioning
+
+# ═══════════════════════════════════════════════════════════════
+# AUDIT & LOGGING
+# ═══════════════════════════════════════════════════════════════
+
+audit:
+  enabled: true
+  logLevel: "DEBUG"                 # Verbose logging for debugging
+  trackDataAccess: true
+  retention_days: 30                # Keep DEV logs 30 days
+  compress_after_days: 7
+
+# ═══════════════════════════════════════════════════════════════
+# RATE LIMITING (High limits for testing)
+# ═══════════════════════════════════════════════════════════════
+
+rateLimiting:
+  # Anomaly Detection Agent
+  anomaly_detection: 1000/minute
+  alerts: 500/minute
+  
+  # Fault Diagnosis Agent
+  diagnosis_queries: 1000/minute
+  
+  # Repair Planner Agent
+  work_orders: 100/hour
+  technician_queries: 500/minute
+  
+  # Maintenance Scheduler Agent
+  schedule_creations: 100/hour
+  availability_checks: 500/minute
+  
+  # Parts Ordering Agent
+  parts_orders: 50/hour
+  supplier_queries: 300/minute
+
+# ═══════════════════════════════════════════════════════════════
+# TIMEOUT SETTINGS (Generous in DEV)
+# ═══════════════════════════════════════════════════════════════
+
+timeout:
+  anomaly_detection: 300s
+  fault_diagnosis: 300s
+  repair_planning: 300s
+  scheduling: 300s
+  parts_ordering: 300s
+  
+  database_query: 60s
+  api_call: 60s
+  external_service: 120s
+
+# ═══════════════════════════════════════════════════════════════
+# DATA PROTECTION
+# ═══════════════════════════════════════════════════════════════
+
+dataProtection:
+  - rule: "NO_REAL_PII"
+    description: "Use test data, not real employee/customer data"
+    severity: "HIGH"
+    
+  - rule: "ISOLATED_DATABASE"
+    description: "Use dev database, never production"
+    severity: "CRITICAL"
+    
+  - rule: "TEST_EXTERNAL_APIS"
+    description: "Use mock APIs or test endpoints"
+    severity: "HIGH"
+
+# ═══════════════════════════════════════════════════════════════
+# COST TRACKING
+# ═══════════════════════════════════════════════════════════════
+
+cost:
+  warn_on_consumption: 10000        # Warn if $10k/day
+  alert_on_consumption: 50000       # Alert if $50k/day
+  track_model_calls: true
+  track_database_operations: true
+
+# ═══════════════════════════════════════════════════════════════
+# DEPLOYMENT SETTINGS
+# ═══════════════════════════════════════════════════════════════
+
+deployment:
+  environment: "development"
+  auto_scale: true
+  min_instances: 1
+  max_instances: 5
+  allow_experimental_features: true
+  allow_debug_mode: true
+  capture_detailed_traces: true
+
+# ═══════════════════════════════════════════════════════════════
+# ERROR HANDLING
+# ═══════════════════════════════════════════════════════════════
+
+errorHandling:
+  log_all_errors: true
+  verbose_error_messages: true
+  capture_stack_traces: true
+  allow_debug_breakpoints: true
+
+# ═══════════════════════════════════════════════════════════════
+# TESTING FEATURES
+# ═══════════════════════════════════════════════════════════════
+
+testing:
+  allow_chaos_engineering: true
+  allow_load_testing: true
+  allow_integration_testing: true
+  allow_reset_to_defaults: true
+  enable_test_data_factory: true
+  mock_external_services: true
