@@ -1,18 +1,22 @@
 ﻿using System;
+using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using AgentOps.CLI;
 using AgentOps.CLI.Options;
 using AgentOps.CLI.Dashboard;
+using AgentOps.CLI.Rules;
 using AgentOps.Application.UseCases.CreateAgentDefinition;
 using AgentOps.Application.UseCases.ViewAuditTrail;
 using AgentOps.Application.Dashboard;
 using AgentOps.Infrastructure.Persistence;
 using AgentOps.Core.Governance;
 using AgentOps.Core.Governance.Rules;
+using AgentOps.Core.Rules;
 using AgentOps.Application.Governance;
 using AgentOps.Application.Interfaces;
+using AgentOps.Application.Rules;
 using AgentOps.Infrastructure.Config;
 using AgentOps.Application.Parsing;
 
@@ -24,15 +28,37 @@ bool isDashboard      = args.Length >= 1 && args[0] == "dashboard";
 // Parse optional flags for validate-agent mode
 bool postComment = args.Contains("--post-comment");
 bool externalMode = args.Contains("--external");
+bool interactiveMode = args.Contains("--interactive");
 int prNumberArg = 0;
 string prOwnerArg = string.Empty;
 string prRepoArg = string.Empty;
+string? rulesFileArg = null;
+string? allowedActionsArg = null;
+string? forbiddenActionsArg = null;
+bool? requireOwnerArg = null;
+bool? requireAuditArg = null;
+int? minScoreArg = null;
+int? blockScoreArg = null;
+
 for (int i = 0; i < args.Length - 1; i++)
 {
     if (args[i] == "--pr"    && int.TryParse(args[i + 1], out int pn)) prNumberArg = pn;
     if (args[i] == "--owner")  prOwnerArg = args[i + 1];
     if (args[i] == "--repo")   prRepoArg  = args[i + 1];
+    if (args[i] == "--rules")  rulesFileArg = args[i + 1];
+    if (args[i] == "--allow")  allowedActionsArg = args[i + 1];
+    if (args[i] == "--forbid") forbiddenActionsArg = args[i + 1];
+    if (args[i] == "--min-score" && int.TryParse(args[i + 1], out int ms)) minScoreArg = ms;
+    if (args[i] == "--block-score" && int.TryParse(args[i + 1], out int bs)) blockScoreArg = bs;
 }
+
+// Check for --require-owner / --no-require-owner
+if (args.Contains("--require-owner")) requireOwnerArg = true;
+if (args.Contains("--no-require-owner")) requireOwnerArg = false;
+
+// Check for --require-audit / --no-require-audit
+if (args.Contains("--require-audit")) requireAuditArg = true;
+if (args.Contains("--no-require-audit")) requireAuditArg = false;
 
 var host = Host.CreateDefaultBuilder(args)
 	.ConfigureServices((context, services) =>
@@ -41,6 +67,10 @@ var host = Host.CreateDefaultBuilder(args)
 		services.AddSingleton<IConsoleWriter, ConsoleWriter>();
 		services.AddSingleton<DataPathsOptions>();
 		services.AddSingleton<IClock, SystemClock>();
+		
+		// User rules loader
+		services.AddSingleton<UserRulesLoader>();
+		services.AddSingleton<InteractiveRulesBuilder>();
 		
 		// Agent repositories and handlers
 		services.AddSingleton<IAgentDefinitionRepository>(sp =>
@@ -238,12 +268,65 @@ if (isCIPRAnalysis && args.Length >= 4)
 else if (isValidateAgent && args.Length >= 2)
 {
 	var handler = host.Services.GetRequiredService<ValidateAgentCommandHandler>();
+	var rulesLoader = host.Services.GetRequiredService<UserRulesLoader>();
+	var rulesBuilder = host.Services.GetRequiredService<InteractiveRulesBuilder>();
+	
 	try
 	{
 		var command = new ValidateAgentCommand(args[1]);
 
 		// Load local governance config (reads data/governance-config.yaml if present)
 		var localConfig = LocalGovernanceConfigReader.TryLoad();
+
+		// ── Load user rules (with precedence order) ────────────────────────
+		UserRules userRules;
+		
+		// 1. Interactive mode (highest priority)
+		if (interactiveMode)
+		{
+			userRules = await rulesBuilder.BuildInteractiveAsync();
+		}
+		// 2. File-based rules (--rules flag)
+		else if (!string.IsNullOrEmpty(rulesFileArg))
+		{
+			try
+			{
+				var rulesFromFile = await rulesLoader.LoadFromFileAsync(rulesFileArg);
+				var rulesFromFlags = rulesLoader.LoadFromFlags(allowedActionsArg, forbiddenActionsArg, requireOwnerArg, requireAuditArg, minScoreArg, blockScoreArg);
+				userRules = rulesLoader.Merge(rulesFromFile, rulesFromFlags);
+			}
+			catch (Exception ex)
+			{
+				console.WriteError($"❌ Error loading rules file: {ex.Message}");
+				Environment.ExitCode = 1;
+				return;
+			}
+		}
+		// 3. CLI flags (--allow, --forbid, etc.)
+		else if (!string.IsNullOrEmpty(allowedActionsArg) || 
+		         !string.IsNullOrEmpty(forbiddenActionsArg) || 
+		         requireOwnerArg.HasValue || 
+		         requireAuditArg.HasValue || 
+		         minScoreArg.HasValue || 
+		         blockScoreArg.HasValue)
+		{
+			userRules = rulesLoader.LoadFromFlags(allowedActionsArg, forbiddenActionsArg, requireOwnerArg, requireAuditArg, minScoreArg, blockScoreArg);
+		}
+		// 4. Defaults (no flags provided)
+		else
+		{
+			userRules = rulesLoader.GetDefaults();
+		}
+
+		// Convert user rules to governance config (overrides local config)
+		var governanceConfig = userRules.ToGovernanceConfig();
+		if (localConfig != null)
+		{
+			// Merge: use user rules but keep repo-specific settings from localConfig
+			governanceConfig.Repo = localConfig.Repo;
+			if (localConfig.Environments.Count > 0)
+				governanceConfig.Environments = localConfig.Environments;
+		}
 
 		// When --external is set, load the mapping context before running governance
 		AgentMappingContext? externalContext = null;
@@ -257,7 +340,7 @@ else if (isValidateAgent && args.Length >= 2)
 			catch { /* context is optional — don't fail if it errors */ }
 		}
 
-		var report = await handler.HandleAsync(command, localConfig);
+		var report = await handler.HandleAsync(command, governanceConfig);
 		DisplayGovernanceReport(report, console);
 
 		// Display external format analysis when --external flag was set

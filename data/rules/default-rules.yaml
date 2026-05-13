@@ -1,0 +1,41 @@
+rules:
+  name: "Default Rules"
+  description: "Reglas por defecto de AgentOps"
+  
+  actions:
+    allowed:
+      - read_code
+      - post_comment
+      - request_changes
+      - read_files
+      - read_logs
+      - send_notification
+      - create_report
+    forbidden:
+      - push_to_main
+      - delete_files
+      - delete_database
+      - access_secrets
+      - modify_permissions
+      - execute_code
+      - bypass_authentication
+
+  requirements:
+    owner_required: true
+    audit_required: true
+    version_required: true
+    min_version_format: "semver"
+
+  scoring:
+    critical_penalty: 25
+    warning_penalty: 10
+    blocked_threshold: 40
+    review_threshold: 70
+
+  environments:
+    allowed:
+      - development
+      - staging
+      - production
+    require_approval_for:
+      - production

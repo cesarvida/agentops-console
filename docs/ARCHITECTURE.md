@@ -295,6 +295,123 @@ If Azure is unavailable (missing creds, timeout, invalid response), semantic is 
 
 `Environment.ExitCode = 1` is used (not `Environment.Exit(1)`) so async cleanup runs before process exit.
 
+---
+
+## User-Defined Rules
+
+Users can define and apply custom governance rules in each execution without modifying code. Rules can be loaded from YAML files, specified inline via CLI flags, or configured interactively.
+
+### Via YAML File
+
+Load a pre-defined rules file:
+
+```bash
+dotnet run -- validate-agent agent.yaml --rules my-rules.yaml
+```
+
+Example rules file structure:
+
+```yaml
+rules:
+  name: "Custom Rules"
+  description: "Custom governance rules"
+  
+  actions:
+    allowed:
+      - read_code
+      - post_comment
+      - read_files
+    forbidden:
+      - push_to_main
+      - delete_files
+
+  requirements:
+    owner_required: true
+    audit_required: true
+    version_required: true
+
+  scoring:
+    critical_penalty: 30
+    warning_penalty: 15
+    blocked_threshold: 60
+    review_threshold: 85
+```
+
+### Via Inline Flags
+
+Specify rules directly in the command:
+
+```bash
+dotnet run -- validate-agent agent.yaml \
+  --allow "read_code,post_comment,read_files" \
+  --forbid "push_to_main,delete_files,execute_code" \
+  --require-owner \
+  --require-audit \
+  --min-score 75 \
+  --block-score 45
+```
+
+### Interactive Mode
+
+The system guides users through rule configuration step by step:
+
+```bash
+dotnet run -- validate-agent agent.yaml --interactive
+```
+
+The interactive mode:
+1. Prompts for a rule set name
+2. Asks for allowed and forbidden actions (with defaults suggested)
+3. Confirms owner/audit requirements
+4. Sets scoring thresholds
+5. Optionally saves the rules to `data/rules/` for reuse
+
+### Rule Precedence
+
+When multiple rule sources are specified, this order applies:
+
+1. **`--interactive`** — If present, prompts the user and ignores all other flags
+2. **`--rules <file>`** — Load base rules from file
+3. **CLI flags** (`--allow`, `--forbid`, etc.) — Override or extend file-based rules
+4. **`governance-config.yaml`** — Per-repo configuration (if no other flags are set)
+5. **System defaults** — Hardcoded default rules (last resort)
+
+### Pre-defined Rule Sets
+
+Three example rule sets are included in `data/rules/`:
+
+| File | Score Thresholds | Enforcement | Best For |
+|---|---|---|---|
+| `default-rules.yaml` | BLOCKED: 40, APPROVED: 70 | Balanced | General use |
+| `strict-rules.yaml` | BLOCKED: 60, APPROVED: 85 | Strict | Production deployments |
+| `relaxed-rules.yaml` | BLOCKED: 20, APPROVED: 50 | Permissive | Development/testing |
+
+### User Rules API
+
+The `UserRulesLoader` class (in `AgentOps.Application.Rules`) provides:
+
+```csharp
+// Load from YAML file
+var rules = await loader.LoadFromFileAsync("path/to/rules.yaml");
+
+// Load from CLI flags
+var rules = loader.LoadFromFlags(
+    allowedActions: "read_code,post_comment",
+    forbiddenActions: "push_to_main",
+    requireOwner: true,
+    requireAudit: true,
+    minScore: 80,
+    blockScore: 50
+);
+
+// Merge file + flags (flags override)
+var merged = loader.Merge(rulesFromFile, rulesFromFlags);
+
+// Convert to GovernanceConfig for engine use
+var config = rules.ToGovernanceConfig();
+```
+
+---
 
 ## Visión Arquitectónica
 

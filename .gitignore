@@ -11,6 +11,7 @@ commitmsg.txt
 
 # Local environment secrets (never commit)
 .env
+.env.*
 secrets.local.json
 **/*.user.json
 **/secrets.json
@@ -28,3 +29,11 @@ test_output.txt
 
 # Workflow test artifacts
 workflow-artifacts-*/
+
+# User-generated rules (not version controlled)
+data/rules/custom-*/
+
+# Evaluation and governance reports (dynamically generated)
+**/evaluation_*.json
+**/governance_*.json
+

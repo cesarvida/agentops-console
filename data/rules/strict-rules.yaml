@@ -1,0 +1,30 @@
+rules:
+  name: "Strict Production Rules"
+  description: "Reglas estrictas para entornos de producción"
+  
+  actions:
+    allowed:
+      - read_code
+      - post_comment
+    forbidden:
+      - push_to_main
+      - delete_files
+      - delete_database
+      - access_secrets
+      - modify_permissions
+      - execute_code
+      - bypass_authentication
+      - deploy_to_production
+      - send_emails
+      - access_database
+
+  requirements:
+    owner_required: true
+    audit_required: true
+    version_required: true
+
+  scoring:
+    critical_penalty: 30
+    warning_penalty: 15
+    blocked_threshold: 60
+    review_threshold: 85
