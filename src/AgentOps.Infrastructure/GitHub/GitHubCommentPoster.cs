@@ -12,10 +12,12 @@ namespace AgentOps.Infrastructure.GitHub
 {
     /// <summary>
     /// GitHub comment poster implementation using GitHub REST API.
+    /// Includes retry logic with exponential backoff.
     /// </summary>
     public class GitHubCommentPoster : ICommentPoster
     {
         private readonly GitHubHttpClient _httpClient;
+        private const int MaxRetries = 3;
 
         public GitHubCommentPoster(GitHubHttpClient httpClient)
         {
@@ -44,7 +46,7 @@ namespace AgentOps.Infrastructure.GitHub
             try
             {
                 string comment = FormatAnalysisComment(report);
-                await PostCommentAsync(owner, repo, prNumber, comment);
+                _ = await PostCommentAsync(owner, repo, prNumber, comment);
             }
             catch (Exception ex)
             {
@@ -68,7 +70,7 @@ namespace AgentOps.Infrastructure.GitHub
             try
             {
                 string comment = report.ToMarkdownComment();
-                await PostCommentAsync(owner, repo, prNumber, comment);
+                _ = await PostCommentAsync(owner, repo, prNumber, comment);
             }
             catch (Exception ex)
             {
@@ -169,15 +171,49 @@ namespace AgentOps.Infrastructure.GitHub
         }
 
         /// <summary>
-        /// Posts a comment to a GitHub PR using the GitHub API.
+        /// Posts a comment to a GitHub PR using the GitHub API with retry logic.
+        /// Attempts up to 3 times with exponential backoff (2s, 4s).
+        /// If all retries fail, writes a GitHub Actions warning instead of throwing.
         /// </summary>
-        private async Task PostCommentAsync(string owner, string repo, int prNumber, string commentBody)
+        private async Task<bool> PostCommentAsync(string owner, string repo, int prNumber, string commentBody)
         {
             var endpoint = $"/repos/{owner}/{repo}/issues/{prNumber}/comments";
             var payload = new { body = commentBody };
             var jsonContent = JsonSerializer.Serialize(payload);
 
-            await _httpClient.PostAsync(endpoint, jsonContent);
+            return await PostWithRetryAsync(owner, repo, prNumber, endpoint, jsonContent);
+        }
+
+        /// <summary>
+        /// Attempts to post a comment with exponential backoff retry (max 3 attempts).
+        /// Returns true if successful, false if all retries exhausted.
+        /// Writes GitHub Actions warning if all attempts fail.
+        /// </summary>
+        private async Task<bool> PostWithRetryAsync(string owner, string repo, int prNumber, string endpoint, string jsonContent)
+        {
+            for (int attempt = 1; attempt <= MaxRetries; attempt++)
+            {
+                try
+                {
+                    await _httpClient.PostAsync(endpoint, jsonContent);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[INFO] Attempt {attempt}/{MaxRetries} to post PR comment failed: {ex.Message}");
+
+                    if (attempt < MaxRetries)
+                    {
+                        // Exponential backoff: 2s, 4s
+                        var delayMs = attempt * 2000;
+                        await Task.Delay(delayMs);
+                    }
+                }
+            }
+
+            // All retries exhausted — write GitHub Actions warning
+            Console.WriteLine("::warning::AgentOps: PR comment could not be posted after 3 attempts. Governance report is in the workflow artifacts.");
+            return false;
         }
     }
 }

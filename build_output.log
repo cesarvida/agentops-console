@@ -1,0 +1,29 @@
+  Determinando los proyectos que se van a restaurar...
+C:\Users\cvida\source\framework\app_console\src\AgentOps.Infrastructure\AgentOps.Infrastructure.csproj : warning NU1603: AgentOps.Infrastructure depends on YamlDotNet (>= 12.1.2) but YamlDotNet 12.1.2 was not found. YamlDotNet 12.2.0 was resolved instead. [C:\Users\cvida\source\framework\app_console\AgentOps.Console.sln]
+C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\AgentOps.Infrastructure.Tests.csproj : warning NU1603: AgentOps.Infrastructure depends on YamlDotNet (>= 12.1.2) but YamlDotNet 12.1.2 was not found. YamlDotNet 12.2.0 was resolved instead. [C:\Users\cvida\source\framework\app_console\AgentOps.Console.sln]
+  Todos los proyectos est├ín actualizados para la restauraci├│n.
+C:\Users\cvida\source\framework\app_console\src\AgentOps.Infrastructure\AgentOps.Infrastructure.csproj : warning NU1603: AgentOps.Infrastructure depends on YamlDotNet (>= 12.1.2) but YamlDotNet 12.1.2 was not found. YamlDotNet 12.2.0 was resolved instead.
+C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\AgentOps.Infrastructure.Tests.csproj : warning NU1603: AgentOps.Infrastructure depends on YamlDotNet (>= 12.1.2) but YamlDotNet 12.1.2 was not found. YamlDotNet 12.2.0 was resolved instead.
+  AgentOps.GitHub -> C:\Users\cvida\source\framework\app_console\src\AgentOps.GitHub\bin\Release\net10.0\AgentOps.GitHub.dll
+  AgentOps.Core -> C:\Users\cvida\source\framework\app_console\src\AgentOps.Core\bin\Release\net10.0\AgentOps.Core.dll
+  AgentOps.Agents -> C:\Users\cvida\source\framework\app_console\src\AgentOps.Agents\bin\Release\net10.0\AgentOps.Agents.dll
+  AgentOps.Security -> C:\Users\cvida\source\framework\app_console\src\AgentOps.Security\bin\Release\net10.0\AgentOps.Security.dll
+  AgentOps.Core.Tests -> C:\Users\cvida\source\framework\app_console\tests\AgentOps.Core.Tests\bin\Release\net10.0\AgentOps.Core.Tests.dll
+  AgentOps.Application -> C:\Users\cvida\source\framework\app_console\src\AgentOps.Application\bin\Release\net10.0\AgentOps.Application.dll
+  AgentOps.Security.Tests -> C:\Users\cvida\source\framework\app_console\tests\AgentOps.Security.Tests\bin\Release\net10.0\AgentOps.Security.Tests.dll
+  AgentOps.Infrastructure -> C:\Users\cvida\source\framework\app_console\src\AgentOps.Infrastructure\bin\Release\net10.0\AgentOps.Infrastructure.dll
+  AgentOps.Application.Tests -> C:\Users\cvida\source\framework\app_console\tests\AgentOps.Application.Tests\bin\Release\net10.0\AgentOps.Application.Tests.dll
+  AgentOps.CLI -> C:\Users\cvida\source\framework\app_console\src\AgentOps.CLI\bin\Release\net10.0\AgentOps.CLI.dll
+  AgentOps.Infrastructure.Tests -> C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\bin\Release\net10.0\AgentOps.Infrastructure.Tests.dll
+  AgentOps.CLI.Tests -> C:\Users\cvida\source\framework\app_console\tests\AgentOps.CLI.Tests\bin\Release\net10.0\AgentOps.CLI.Tests.dll
+
+Compilaci├│n correcta.
+
+C:\Users\cvida\source\framework\app_console\src\AgentOps.Infrastructure\AgentOps.Infrastructure.csproj : warning NU1603: AgentOps.Infrastructure depends on YamlDotNet (>= 12.1.2) but YamlDotNet 12.1.2 was not found. YamlDotNet 12.2.0 was resolved instead. [C:\Users\cvida\source\framework\app_console\AgentOps.Console.sln]
+C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\AgentOps.Infrastructure.Tests.csproj : warning NU1603: AgentOps.Infrastructure depends on YamlDotNet (>= 12.1.2) but YamlDotNet 12.1.2 was not found. YamlDotNet 12.2.0 was resolved instead. [C:\Users\cvida\source\framework\app_console\AgentOps.Console.sln]
+C:\Users\cvida\source\framework\app_console\src\AgentOps.Infrastructure\AgentOps.Infrastructure.csproj : warning NU1603: AgentOps.Infrastructure depends on YamlDotNet (>= 12.1.2) but YamlDotNet 12.1.2 was not found. YamlDotNet 12.2.0 was resolved instead.
+C:\Users\cvida\source\framework\app_console\tests\AgentOps.Infrastructure.Tests\AgentOps.Infrastructure.Tests.csproj : warning NU1603: AgentOps.Infrastructure depends on YamlDotNet (>= 12.1.2) but YamlDotNet 12.1.2 was not found. YamlDotNet 12.2.0 was resolved instead.
+    4 Advertencia(s)
+    0 Errores
+
+Tiempo transcurrido 00:00:02.30
