@@ -255,11 +255,21 @@ governance:
   dataClassification: "internal"
   piiHandling: "none"
   
-  auditConfig:
+  audit:
+    enabled: true
     logAllInvocations: true
-    logInputData: false  # Don't log sensor values (operational data)
+    logInputData: false
     logOutputData: true
     retentionDays: 90
+  
+  rateLimitingConfig:
+    enabled: true
+    requests_per_minute: 200
+    requests_per_hour: 10000
+  
+  timeoutConfig:
+    enabled: true
+    timeout_seconds: 60
 
 # ═══════════════════════════════════════════════════════════════
 # PERFORMANCE & SCALING
