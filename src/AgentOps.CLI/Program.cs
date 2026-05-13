@@ -8,6 +8,7 @@ using AgentOps.CLI.Options;
 using AgentOps.CLI.Dashboard;
 using AgentOps.CLI.Rules;
 using AgentOps.CLI.Interactive;
+using AgentOps.CLI.Commands;
 using AgentOps.Application.UseCases.CreateAgentDefinition;
 using AgentOps.Application.UseCases.ViewAuditTrail;
 using AgentOps.Application.Dashboard;
@@ -24,6 +25,7 @@ using AgentOps.Application.Parsing;
 // Check if running in CI/non-interactive mode for PR analysis
 bool isCIPRAnalysis   = args.Length >= 4 && args[0] == "analyze-pr";
 bool isValidateAgent  = args.Length >= 2 && args[0] == "validate-agent";
+bool isAnalyzeRemote  = args.Length >= 1 && args[0] == "analyze";
 bool isDashboard      = args.Length >= 1 && args[0] == "dashboard";
 
 // Parse optional flags for validate-agent mode
@@ -180,6 +182,9 @@ var host = Host.CreateDefaultBuilder(args)
 		
 		// ── Interactive Agent Analyzer Wizard ──────────────────────────────
 		services.AddScoped<AgentAnalyzerWizard>();
+		
+		// ── Remote Agent Analyzer Command ──────────────────────────────────
+		services.AddScoped<AnalyzeRemoteAgentCommand>();
 	})
 	.ConfigureLogging(logging =>
 	{
@@ -267,6 +272,22 @@ if (isCIPRAnalysis && args.Length >= 4)
 	catch (Exception ex)
 	{
 		console.WriteLine($"❌ Error during PR analysis: {ex.Message}");
+	}
+}
+else if (isAnalyzeRemote)
+{
+	// Interactive remote agent analyzer
+	// Usage: dotnet run -- analyze
+	try
+	{
+		var cmd = host.Services.GetRequiredService<AnalyzeRemoteAgentCommand>();
+		var exitCode = await cmd.ExecuteInteractiveAsync();
+		Environment.ExitCode = exitCode;
+	}
+	catch (Exception ex)
+	{
+		console.WriteLine($"❌ Error: {ex.Message}");
+		Environment.ExitCode = 1;
 	}
 }
 else if (isValidateAgent && args.Length >= 2)
