@@ -1,356 +1,125 @@
 # PRODUCTION ENVIRONMENT RULES
 # Strict governance for live manufacturing environment
-# Use: dotnet run -- analyze --rules data/rules/production-rules.yaml
 
-agentName: "Factory Agents - Production"
 environment: "production"
 version: "1.0.0"
-author: "Predictive Maintenance Team"
 
 description: |
-  Strict governance rules for the production environment.
-  Emphasizes safety, stability, compliance, and auditability.
-  All actions are logged. All changes require approval.
-  Zero tolerance for mistakes affecting manufacturing.
+  Production environment governance rules.
+  Strict rules for live manufacturing operations.
+  All write actions require approval. Zero tolerance for mistakes.
 
-# ═══════════════════════════════════════════════════════════════
-# ALLOWED ACTIONS (Minimal strict whitelist)
 # ═══════════════════════════════════════════════════════════════
 
 allowedActions:
-  # Anomaly Detection Agent - Read-only observation
   - read_telemetry
   - classify_anomaly
-  - raise_alert                     # Only raise, never modify
+  - raise_alert
   - log_anomaly
-  
-  # Fault Diagnosis Agent - Read-only analysis
-  - query_machine_data
-  - search_knowledge_base
-  - query_historical_faults
-  - create_fault_report             # Reports only, no actions
-  
-  # Repair Planner Agent - Recommend only, manual approval
-  - get_available_technicians       # Read-only
-  - get_available_parts             # Read-only
-  - query_historical_data           # Read-only
-  - create_work_order               # With approval required
-  
-  # Maintenance Scheduler Agent - Recommend only
-  - get_work_orders
-  - query_maintenance_history
-  - check_technician_availability
-  - analyze_production_calendar
-  - calculate_risk_score
-  - create_maintenance_schedule     # With approval required
-  
-  # Parts Ordering Agent - Recommend only
-  - get_work_order_details
-  - check_inventory_levels
-  - query_supplier_catalog
-  - calculate_costs
-  - create_parts_order              # With approval required
-  
-  # General
-  - read_logs
-  - generate_compliance_report
-
-# ═══════════════════════════════════════════════════════════════
-# FORBIDDEN ACTIONS (Strict blacklist - ZERO tolerance)
-# ═══════════════════════════════════════════════════════════════
+  - query_thresholds
+  - get_machine_data
 
 forbiddenActions:
-  # ABSOLUTELY NO PII/SECRETS
-  - access_employee_data
-  - access_employee_salaries
-  - access_customer_data
-  - access_customer_pii
-  - store_credentials
-  - access_secrets
-  - access_api_keys
-  - access_tokens
-  
-  # NO DATA MODIFICATION/DELETION
   - delete_any_data
-  - delete_orders
-  - delete_machine_data
-  - modify_historical_records
-  - modify_completed_orders
-  - bulk_delete
-  - wipe_data
-  
-  # NO SYSTEM BYPASS
+  - modify_any_data
+  - access_pii
+  - store_credentials
   - bypass_audit_logging
-  - bypass_approval_workflow
-  - bypass_rate_limits
-  - bypass_timeouts
   - execute_arbitrary_code
-  - modify_system_config
-  - escalate_privileges
-  
-  # NO EXTERNAL ACTIONS WITHOUT APPROVAL
-  - send_notifications_without_approval
-  - cancel_live_orders_without_approval
-  - modify_supplier_agreements
-  - change_vendor_relationships
-  - modify_machine_thresholds_without_review
-  
-  # NO COST SURPRISES
-  - engage_expensive_services_without_approval
-  - commit_to_long_term_contracts
-  - make_financial_commitments
+  - modify_thresholds_without_approval
+  - cancel_orders_without_approval
+  - access_employee_data
 
-# ═══════════════════════════════════════════════════════════════
-# GOVERNANCE REQUIREMENTS (MANDATORY)
 # ═══════════════════════════════════════════════════════════════
 
 governance:
-  requireOwner: true                # MUST have clear ownership
-  requireAudit: true                # MUST have complete audit trail
-  requireApproval: true             # MUST have manual approval for actions
-  requireVersion: true              # MUST use semantic versioning
-  requireSignedCode: true           # MUST verify code signatures
-  requireSecurityScan: true         # MUST pass security scanning
-  requireLoadTest: true             # MUST validate under load
-
-# ═══════════════════════════════════════════════════════════════
-# APPROVAL WORKFLOW
-# ═══════════════════════════════════════════════════════════════
+  requireOwner: true
+  requireAudit: true
+  requireApproval: true
+  requireVersion: true
+  requireCodeSigning: true
+  requireSecurityScan: true
 
 approvalWorkflow:
-  create_work_order:
+  critical_alerts:
     required: true
-    approvers: ["operations-manager@factory.com"]
-    sla_hours: 2
-    
-  create_maintenance_schedule:
-    required: true
-    approvers: ["scheduling-lead@factory.com", "operations-manager@factory.com"]
-    sla_hours: 4
-    
-  create_parts_order:
-    required: true
-    threshold: 5000  # Orders > $5k need approval
-    approvers: ["procurement-manager@factory.com"]
+    approvers: ["ops-manager@factory.com"]
     sla_hours: 1
-    
-  modify_thresholds:
-    required: true
-    approvers: ["engineering-manager@factory.com"]
-    sla_hours: 24
-
-# ═══════════════════════════════════════════════════════════════
-# AUDIT & LOGGING (COMPREHENSIVE)
-# ═══════════════════════════════════════════════════════════════
 
 audit:
   enabled: true
-  logLevel: "INFO"                  # Standard + all decisions
-  logAllActions: true               # Log EVERYTHING
-  trackDataAccess: true
-  trackApprovals: true
-  trackDecisions: true
-  trackCostImpact: true
-  
-  retention_days: 2555              # 7 years (regulatory requirement)
-  immutable_storage: true           # WORM (Write-Once-Read-Many)
+  logLevel: "INFO"
+  logAllActions: true
+  retention_days: 2555  # 7 years
+  immutable_storage: true
   encryption: "AES-256"
-  
-  export_compliance_reports: true
-  daily_audit_summary: true
-  alert_on_suspicious_activity: true
 
-# ═══════════════════════════════════════════════════════════════
-# RATE LIMITING (CONSERVATIVE)
 # ═══════════════════════════════════════════════════════════════
 
 rateLimiting:
-  # Anomaly Detection Agent - Per hour limits
-  anomaly_detection: 60/minute      # Enough for normal operation
-  alerts: 20/minute                 # Prevent alert flooding
-  
-  # Fault Diagnosis Agent
-  diagnosis_queries: 50/minute      # Controlled analysis
-  
-  # Repair Planner Agent
-  work_orders: 5/hour               # Manual approval bottleneck
-  technician_queries: 30/minute
-  
-  # Maintenance Scheduler Agent
-  schedule_creations: 3/hour        # Requires approval
-  availability_checks: 30/minute
-  
-  # Parts Ordering Agent
-  parts_orders: 2/hour              # Requires approval
-  supplier_queries: 20/minute
-
-# ═══════════════════════════════════════════════════════════════
-# TIMEOUT SETTINGS (TIGHT - Fail fast)
-# ═══════════════════════════════════════════════════════════════
+  anomaly_detection: 60/minute
+  alerts: 20/minute
+  critical_alerts: 5/minute
 
 timeout:
-  anomaly_detection: 60s            # Must respond quickly
-  fault_diagnosis: 90s
-  repair_planning: 120s
-  scheduling: 120s
-  parts_ordering: 120s
-  
-  database_query: 30s               # Strict DB limits
-  api_call: 30s                     # Strict API limits
-  external_service: 60s
+  anomaly_detection: 60s
+  database_query: 30s
+  api_call: 30s
+
+resourceLimits:
+  max_concurrent: 10
+  max_database_connections: 5
+  max_api_connections: 5
+  cpu_limit: 1
+  memory_limit: 256MB
 
 # ═══════════════════════════════════════════════════════════════
-# DATA PROTECTION (STRICT COMPLIANCE)
+
+cost:
+  daily_budget: 10000
+  warn_at: 7000
+  alert_at: 9000
+  hard_cap: 10500
+
 # ═══════════════════════════════════════════════════════════════
 
 dataProtection:
   - rule: "NO_PII"
-    description: "ZERO tolerance for personal data"
     severity: "CRITICAL"
     action: "IMMEDIATELY_BLOCK"
-    
+  
   - rule: "NO_PRODUCTION_SECRETS"
-    description: "Never access production credentials"
     severity: "CRITICAL"
     action: "IMMEDIATELY_BLOCK"
-    
+  
   - rule: "ENCRYPTION_IN_TRANSIT"
-    description: "All data encrypted (TLS 1.2+)"
     severity: "HIGH"
     action: "BLOCK_UNENCRYPTED"
-    
+  
   - rule: "ENCRYPTION_AT_REST"
-    description: "All stored data encrypted"
     severity: "HIGH"
     action: "BLOCK_UNENCRYPTED"
-    
-  - rule: "DATA_MINIMIZATION"
-    description: "Only access necessary data"
-    severity: "MEDIUM"
-    action: "LOG_AND_ALERT"
 
 # ═══════════════════════════════════════════════════════════════
-# COST CONTROL & BUDGETING
-# ═══════════════════════════════════════════════════════════════
 
-cost:
-  daily_budget: 10000               # Hard cap $10k/day
-  warn_on_consumption: 7000         # Warn at 70%
-  alert_on_consumption: 9000        # Alert at 90%
-  emergency_halt: 10500             # Stop everything at 105%
-  
-  track_model_calls: true
-  track_database_operations: true
-  track_api_calls: true
-  
-  monthly_budget: 250000            # Hard cap $250k/month
-  yearly_budget: 2500000            # Hard cap $2.5M/year
-  
-  require_approval_if:
-    single_order_over: 25000
-    daily_spend_over: 10000
-    monthly_projection: 250000
-
-# ═══════════════════════════════════════════════════════════════
-# RESOURCE MANAGEMENT (TIGHT CONTROLS)
-# ═══════════════════════════════════════════════════════════════
-
-resources:
-  max_concurrent_requests: 10       # Very limited concurrency
-  max_database_connections: 5
-  max_api_connections: 5
-  cpu_limit_per_agent: 1
-  memory_limit_per_agent: 256MB
-  
-  enforce_limits: true
-  auto_throttle: true
-  circuit_breaker: true
-
-# ═══════════════════════════════════════════════════════════════
-# DEPLOYMENT & AVAILABILITY
-# ═══════════════════════════════════════════════════════════════
-
-deployment:
-  environment: "production"
-  auto_scale: false                 # Manual scaling only
-  min_instances: 3                  # High availability
-  max_instances: 10
-  
-  require_health_check: true
-  health_check_interval: 60s        # Frequent checks
-  
-  allow_debug_mode: false
-  capture_detailed_traces: false    # Only summary logs in PROD
-  require_backup: true
-
-# ═══════════════════════════════════════════════════════════════
-# DISASTER RECOVERY
-# ═══════════════════════════════════════════════════════════════
+compliance:
+  gdpr_compliant: true
+  hipaa_eligible: true
+  iso27001_compliant: true
+  soc2_compliant: true
+  annual_audit: true
+  security_scan_frequency: "daily"
 
 disasterRecovery:
   backup_frequency: "hourly"
   backup_retention: "30 days"
-  point_in_time_recovery: true
-  failover_mode: "automatic"
-  rpo_minutes: 5                    # Max 5 min data loss
-  rto_minutes: 10                   # Max 10 min downtime
-  
-  test_recovery_monthly: true
-  maintain_standby: true
-
-# ═══════════════════════════════════════════════════════════════
-# COMPLIANCE & REGULATORY
-# ═══════════════════════════════════════════════════════════════
-
-compliance:
-  gdpr_compliant: true              # No PII, right to forget
-  hipaa_eligible: true              # Security controls
-  iso27001_compliant: true          # Information security
-  soc2_compliant: true              # Service organization controls
-  
-  annual_audit: true
-  quarterly_review: true
-  monthly_compliance_report: true
-  
-  security_scan_frequency: "daily"
-  vulnerability_assessment: "weekly"
-  penetration_testing: "quarterly"
-
-# ═══════════════════════════════════════════════════════════════
-# ESCALATION & ALERTS
-# ═══════════════════════════════════════════════════════════════
+  rpo_minutes: 5
+  rto_minutes: 10
 
 escalation:
   enabled: true
   slack_channel: "#production-alerts"
-  email_list:
-    - "predictive-maintenance@factory.com"
-    - "operations-manager@factory.com"
-    - "security-team@factory.com"
-  
   alert_on_errors: true
   alert_on_timeouts: true
-  alert_on_rate_limit_exceeded: true
   alert_on_budget_exceeded: true
-  alert_on_unauthorized_access: true
-  alert_on_suspicious_activity: true
-  
-  critical_alert: "immediate"       # Page on-call engineer
-  high_alert: "15 minutes"
-  medium_alert: "1 hour"
-  low_alert: "daily summary"
-
-# ═══════════════════════════════════════════════════════════════
-# INCIDENT RESPONSE
-# ═══════════════════════════════════════════════════════════════
-
-incidentResponse:
-  enable_incident_mode: true
-  incident_channel: "#incidents"
-  war_room_sla_minutes: 5
-  
-  auto_rollback_on_critical_error: true
-  max_error_rate_percent: 1         # Stop if >1% errors
-  
-  root_cause_analysis_required: true
-  post_incident_review: true
+  critical_alert: "immediate"
