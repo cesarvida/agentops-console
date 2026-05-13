@@ -37,3 +37,8 @@ data/rules/custom-*/
 **/evaluation_*.json
 **/governance_*.json
 
+# Test and non-essential agent definitions
+data/agent-definitions/test-*
+data/agent-definitions/semantic-*
+data/agent-definitions/bad-*
+
