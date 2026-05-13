@@ -326,6 +326,8 @@ else if (isValidateAgent && args.Length >= 2)
 			governanceConfig.Repo = localConfig.Repo;
 			if (localConfig.Environments.Count > 0)
 				governanceConfig.Environments = localConfig.Environments;
+			// Also inherit semantic analysis config from local config
+			governanceConfig.SemanticAnalysis = localConfig.SemanticAnalysis;
 		}
 
 		// When --external is set, load the mapping context before running governance
