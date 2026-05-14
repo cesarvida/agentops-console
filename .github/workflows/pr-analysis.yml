@@ -14,10 +14,10 @@ jobs:
       contents: read
     steps:
       - name: Checkout PR head commit
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v2
         with:
           dotnet-version: '10.0.x'
 
@@ -35,7 +35,7 @@ jobs:
 
       - name: Upload evaluation artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: evaluation-reports
           path: data/evaluations/
@@ -50,17 +50,17 @@ jobs:
       actions: read
     steps:
       - name: Checkout main for CLI
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
         with:
           ref: main
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v2
         with:
           dotnet-version: '10.0.x'
 
       - name: Download evaluation artifacts from analyze job
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v2
         with:
           name: evaluation-reports
           path: data/evaluations/
@@ -86,7 +86,7 @@ jobs:
 
       - name: Find or create PR comment
         if: steps.find_report.outputs.report_path != ''
-        uses: actions/github-script@v7
+        uses: actions/github-script@v6
         with:
           script: |
             const fs = require('fs');
@@ -129,7 +129,7 @@ jobs:
 
       - name: No evaluation report found
         if: steps.find_report.outputs.report_path == ''
-        uses: actions/github-script@v7
+        uses: actions/github-script@v6
         with:
           script: |
             const marker = '<!-- agentops-pr-analysis -->';
