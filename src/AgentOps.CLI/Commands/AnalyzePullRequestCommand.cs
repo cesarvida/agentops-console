@@ -1,5 +1,4 @@
 using AgentOps.Application.Analysis;
-using AgentOps.Application.Interfaces;
 using AgentOps.GitHub;
 using Microsoft.Extensions.Logging;
 
@@ -9,18 +8,15 @@ public sealed class AnalyzePullRequestCommand
 {
     private readonly IGitHubPullRequestClient _githubClient;
     private readonly PromptAnalyzer _analyzer;
-    private readonly ICommentPoster _commentPoster;
     private readonly ILogger<AnalyzePullRequestCommand> _logger;
 
     public AnalyzePullRequestCommand(
         IGitHubPullRequestClient githubClient,
         PromptAnalyzer analyzer,
-        ICommentPoster commentPoster,
         ILogger<AnalyzePullRequestCommand> logger)
     {
         _githubClient = githubClient;
         _analyzer = analyzer;
-        _commentPoster = commentPoster;
         _logger = logger;
     }
 
@@ -53,20 +49,25 @@ public sealed class AnalyzePullRequestCommand
         int maxExitCode = 0;
         foreach (var filePath in relevantFiles)
         {
-            if (!File.Exists(filePath)) { Console.WriteLine($"Skipping {filePath} (not found locally)"); continue; }
+            if (!File.Exists(filePath)) 
+            { 
+                Console.WriteLine($"Skipping {filePath} (not found locally)"); 
+                continue; 
+            }
+            
             var report = await _analyzer.AnalyzeAsync(filePath);
             Console.WriteLine($"{report.FileName}  ->  {report.Decision}  ({report.RiskScore}/100)");
             
-            // Save evaluation report to data/evaluations/
+            // Save evaluation report to data/evaluations/ for workflow artifact
             var fileName = Path.GetFileNameWithoutExtension(filePath);
             var evaluationPath = Path.Combine(evaluationDir, $"evaluation_{fileName}_{DateTime.UtcNow:yyyyMMddHHmmss}.json");
             await File.WriteAllTextAsync(evaluationPath, report.ToAuditJson());
             Console.WriteLine($"  📄 Saved to {evaluationPath}");
             
-            try { await _commentPoster.PostPromptAnalysisAsync(owner, repo, prNumber, report); }
-            catch (Exception ex) { _logger.LogWarning("Failed to post comment: {Message}", ex.Message); }
-            if (report.Decision == "BLOCK") maxExitCode = 1;
+            if (report.Decision == "BLOCK") 
+                maxExitCode = 1;
         }
+        
         Console.WriteLine();
         return maxExitCode;
     }

@@ -63,12 +63,6 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<AgentOps.GitHub.IGitHubPullRequestClient>(sp =>
             new AgentOps.GitHub.GitHubPullRequestClient(
                 Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? ""));
-        services.AddSingleton<AgentOps.GitHub.GitHubHttpClient>(sp =>
-            new AgentOps.GitHub.GitHubHttpClient(
-                Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? ""));
-        services.AddSingleton<ICommentPoster>(sp =>
-            new AgentOps.Infrastructure.GitHub.GitHubCommentPoster(
-                sp.GetRequiredService<AgentOps.GitHub.GitHubHttpClient>()));
         services.AddSingleton<AnalyzePullRequestCommand>();
     })
     .ConfigureLogging(logging =>
