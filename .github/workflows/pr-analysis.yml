@@ -9,18 +9,15 @@ permissions:
 
 jobs:
   analyze:
-    # Analyze PR code with minimal permissions
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - name: Checkout PR head commit
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
+        uses: actions/checkout@v3
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '10.0.x'
 
@@ -38,14 +35,13 @@ jobs:
 
       - name: Upload evaluation artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: evaluation-reports
           path: data/evaluations/
           retention-days: 5
 
   comment:
-    # Post/update PR comment with findings (shared workflow, separate permissions)
     needs: analyze
     runs-on: ubuntu-latest
     permissions:
@@ -53,18 +49,18 @@ jobs:
       contents: read
       actions: read
     steps:
-      - name: Checkout main for CLI (not PR branch)
-        uses: actions/checkout@v4
+      - name: Checkout main for CLI
+        uses: actions/checkout@v3
         with:
           ref: main
 
-      - name: Setup .NET (for CLI)
-        uses: actions/setup-dotnet@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '10.0.x'
 
       - name: Download evaluation artifacts from analyze job
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: evaluation-reports
           path: data/evaluations/
