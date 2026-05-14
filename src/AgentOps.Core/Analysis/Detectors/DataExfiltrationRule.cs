@@ -42,11 +42,18 @@ public class DataExfiltrationRule : IPromptDetector
         ("exfiltrate",             "CRITICAL", "Explicit exfiltration keyword"),
         ("upload the system files","CRITICAL", "Instructs uploading system files"),
         ("transmit the data",      "CRITICAL", "Data transmission instruction"),
+        ("send to backup systems", "CRITICAL", "Instructs sending data to external backup systems"),
+        ("send to external",       "CRITICAL", "Instructs sending data to external systems"),
+        ("stream data to",         "CRITICAL", "Real-time data streaming to external endpoint"),
 
         // HIGH
         ("upload the file to",    "HIGH", "File upload to external destination"),
         ("forward this to",       "HIGH", "Data forwarding instruction"),
         ("send this email to",    "HIGH", "Data forwarding via email"),
+        ("additional_endpoints",  "HIGH", "Configuration of external reporting endpoints"),
+        ("reporting endpoints",   "HIGH", "External data reporting endpoints configured"),
+        ("export_data_periodically", "HIGH", "Periodic data export to external systems"),
+        ("telemetry_data",        "HIGH", "Telemetry collection and transmission"),
 
         // Python modules for exfiltration
         ("ftplib",                "HIGH", "FTP library — common exfiltration vector"),
@@ -171,9 +178,22 @@ public class DataExfiltrationRule : IPromptDetector
     {
         int idx = text.IndexOf(url, StringComparison.OrdinalIgnoreCase);
         if (idx < 0) return false;
-        var context = text[Math.Max(0, idx - 100)..Math.Min(text.Length, idx + 100)].ToLowerInvariant();
+        var context = text[Math.Max(0, idx - 150)..Math.Min(text.Length, idx + 150)].ToLowerInvariant();
+        
+        // Filter out false positives (legitimate features)
+        var excludePatterns = new[] { "export to csv", "export to json", "export to xml", "save to file",
+            "download", "feature:", "changelog", "added", "new feature", "readme", "documentation" };
+        foreach (var excludePattern in excludePatterns)
+        {
+            if (context.Contains(excludePattern)) return false;
+        }
+        
+        // Check for exfiltration context keywords
         return context.Contains("send") || context.Contains("post") || context.Contains("upload") ||
-               context.Contains("forward") || context.Contains("submit");
+               context.Contains("forward") || context.Contains("submit") || context.Contains("endpoint") ||
+               context.Contains("collect") || context.Contains("report") || context.Contains("stream") ||
+               context.Contains("external") || context.Contains("backup") || context.Contains("archive") ||
+               context.Contains("additional") || context.Contains("configure") || context.Contains("transmit");
     }
 
     private static string ExtractHost(string url)

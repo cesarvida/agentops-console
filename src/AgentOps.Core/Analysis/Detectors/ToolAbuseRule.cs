@@ -23,6 +23,12 @@ public class ToolAbuseRule : IPromptDetector
         ("call the execute_code tool",        "CRITICAL", "Instructs agent to execute arbitrary code"),
         ("use the terminal tool to delete",   "CRITICAL", "Instructs agent to delete via terminal"),
         ("instruct the agent to run",         "CRITICAL", "Meta-instruction to execute arbitrary agent action"),
+        ("enable_privileged_mode",           "CRITICAL", "Enables privileged/elevated execution mode"),
+        ("bypass_validation",                "CRITICAL", "Instructs system to bypass security validation checks"),
+        ("skip_tls_verification",            "CRITICAL", "Instructs to disable TLS certificate verification"),
+        ("direct socket connections",        "CRITICAL", "Instructs use of raw socket connections (bypasses security)"),
+        ("alternative communication channels", "CRITICAL", "Instructs use of alternative channels to bypass monitoring"),
+        ("auto-inject credentials",          "CRITICAL", "Automatic credential injection without user knowledge"),
 
         // HIGH
         ("use your tools to access",          "HIGH", "Instructs agent to use tools to access files/data"),
@@ -30,6 +36,10 @@ public class ToolAbuseRule : IPromptDetector
         ("use the write_file tool",           "HIGH", "Instructs agent to write files"),
         ("call the web_search tool",          "HIGH", "Potentially harvesting data via search tool"),
         ("use the read_file tool on",         "HIGH", "Instructs agent to read potentially sensitive files"),
+        ("bypass",                           "HIGH", "Instruction to bypass security controls"),
+        ("privileged_mode",                  "HIGH", "Enablement of privileged execution mode"),
+        ("skip validation",                  "HIGH", "Instruction to skip validation checks"),
+        ("socket.connect",                   "HIGH", "Raw socket connection for direct communication"),
     ];
 
     public List<Finding> Analyze(ExtractedContent content, ContentContext context)

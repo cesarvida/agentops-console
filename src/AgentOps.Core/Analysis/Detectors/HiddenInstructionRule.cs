@@ -30,6 +30,11 @@ public class HiddenInstructionRule : IPromptDetector
     private static readonly string[] HiddenMarkers =
         ["display:none", "visibility:hidden", "font-size:0", "opacity:0", "color:transparent"];
 
+    // System instructions markers that often hide malicious guidance
+    private static readonly string[] SystemInstructionMarkers =
+        ["system instructions should be followed", "system instructions:", "the following system instructions",
+         "NOTE: The following system instructions", "IMPORTANT: System instructions"];
+
     public List<Finding> Analyze(ExtractedContent content, ContentContext context)
     {
         var findings = new List<Finding>();
@@ -121,6 +126,46 @@ public class HiddenInstructionRule : IPromptDetector
                 Explanation     = "Whitespace padding pushes visible content off-screen in UI, hiding instructions from users",
                 Recommendation  = "Remove excessive blank lines."
             });
+        }
+
+        // 6. System Instructions markers (often contain hidden malicious guidance)
+        foreach (var marker in SystemInstructionMarkers)
+        {
+            if (text.Contains(marker, StringComparison.OrdinalIgnoreCase))
+            {
+                // Find context after the marker
+                int markerIdx = text.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+                if (markerIdx >= 0)
+                {
+                    var contextStart = markerIdx + marker.Length;
+                    var contextEnd = Math.Min(contextStart + 300, text.Length);
+                    var sysInstructionText = text[contextStart..contextEnd].ToLowerInvariant();
+                    
+                    // Check for malicious keywords in system instructions
+                    var maliciousKeywords = new[] { "bypass", "ignore", "override", "privilege", "admin", 
+                        "secret", "internal", "confidential", "send", "exfiltrate", "execute", "socket" };
+                    
+                    foreach (var keyword in maliciousKeywords)
+                    {
+                        if (sysInstructionText.Contains(keyword))
+                        {
+                            findings.Add(new Finding
+                            {
+                                RuleId          = "HI-001",
+                                RuleName        = DetectorName,
+                                Category        = FindingCategory.PolicyBypass,
+                                Severity        = "CRITICAL",
+                                ConfidenceScore = 0.85f,
+                                Evidence        = marker + " [contains: " + keyword + "]",
+                                LineNumber      = FindLineNumber(text, marker),
+                                Explanation     = $"System instructions contain potentially malicious keyword '{keyword}' — instructions may override safety guidelines",
+                                Recommendation  = "Review system instructions carefully before executing this prompt."
+                            });
+                            break; // Only report once per marker
+                        }
+                    }
+                }
+            }
         }
 
         return findings;
