@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using AgentOps.Core.Governance;
 using AgentOps.Core.ValueObjects;
 using AgentOps.Core.Exceptions;
 
@@ -17,13 +16,6 @@ namespace AgentOps.Core.Entities
         public AgentConfiguration Configuration { get; init; }
         public DateTime CreatedAt { get; init; }
         public string Version { get; init; }
-
-        /// <summary>
-        /// Optional list of active, approved governance exceptions for this agent.
-        /// When an exception is present and valid, the engine downgrades a
-        /// matching Critical violation to Warning.
-        /// </summary>
-        public List<GovernanceException> Exceptions { get; init; } = new();
 
         public AgentDefinition(
             AgentId id,

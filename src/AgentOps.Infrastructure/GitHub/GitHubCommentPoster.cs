@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using AgentOps.Application.Interfaces;
 using AgentOps.Application.UseCases.EvaluateAgentBehavior.Models;
-using AgentOps.Core.Governance;
+using AgentOps.Core.Analysis.Pipeline;
 using AgentOps.GitHub;
 
 namespace AgentOps.Infrastructure.GitHub
@@ -56,10 +56,9 @@ namespace AgentOps.Infrastructure.GitHub
         }
 
         /// <summary>
-        /// Posts a governance validation report as a PR comment. Always posts regardless of score.
-        /// Fails gracefully if API call fails.
+        /// Posts a prompt security analysis report as a PR comment.
         /// </summary>
-        public async Task PostGovernanceReportAsync(string owner, string repo, int prNumber, GovernanceReport report)
+        public async Task PostPromptAnalysisAsync(string owner, string repo, int prNumber, PromptFileSafetyReport report)
         {
             if (string.IsNullOrWhiteSpace(owner) || string.IsNullOrWhiteSpace(repo))
                 throw new ArgumentException("Owner and repo must be specified");
@@ -74,8 +73,7 @@ namespace AgentOps.Infrastructure.GitHub
             }
             catch (Exception ex)
             {
-                // Graceful fallback — comment failure must not block the workflow exit code
-                Console.WriteLine($"[WARN] Failed to post governance report comment: {ex.Message}");
+                Console.WriteLine($"[WARN] Failed to post prompt analysis comment: {ex.Message}");
             }
         }
 

@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using AgentOps.Application.UseCases.EvaluateAgentBehavior.Models;
-using AgentOps.Core.Governance;
+using AgentOps.Core.Analysis.Pipeline;
 
 namespace AgentOps.Application.Interfaces
 {
@@ -10,13 +10,13 @@ namespace AgentOps.Application.Interfaces
     public interface ICommentPoster
     {
         /// <summary>
-        /// Posts an analysis comment about PR findings to an external system.
+        /// Posts an evaluation analysis comment about PR findings to an external system.
         /// </summary>
         Task PostAnalysisCommentAsync(string owner, string repo, int prNumber, EvaluationReport report);
 
         /// <summary>
-        /// Posts a governance validation report as a PR comment.
+        /// Posts a prompt security analysis report as a PR comment.
         /// </summary>
-        Task PostGovernanceReportAsync(string owner, string repo, int prNumber, GovernanceReport report);
+        Task PostPromptAnalysisAsync(string owner, string repo, int prNumber, PromptFileSafetyReport report);
     }
 }

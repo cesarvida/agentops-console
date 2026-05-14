@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AgentOps.Application\AgentOps.Application.csproj" />
+    <ProjectReference Include="..\..\src\AgentOps.Core\AgentOps.Core.csproj" />
   </ItemGroup>
 
 </Project>

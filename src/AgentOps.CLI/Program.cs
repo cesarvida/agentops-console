@@ -1,665 +1,178 @@
-﻿using System;
-using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using AgentOps.CLI;
-using AgentOps.CLI.Options;
-using AgentOps.CLI.Dashboard;
-using AgentOps.CLI.Rules;
-using AgentOps.CLI.Interactive;
 using AgentOps.CLI.Commands;
-using AgentOps.Application.UseCases.CreateAgentDefinition;
-using AgentOps.Application.UseCases.ViewAuditTrail;
-using AgentOps.Application.Dashboard;
-using AgentOps.Infrastructure.Persistence;
-using AgentOps.Core.Governance;
-using AgentOps.Core.Governance.Rules;
-using AgentOps.Core.Rules;
-using AgentOps.Application.Governance;
+using AgentOps.Application.Analysis;
+using AgentOps.Application.Analysis.Pipeline;
 using AgentOps.Application.Interfaces;
-using AgentOps.Application.Rules;
-using AgentOps.Infrastructure.Config;
-using AgentOps.Application.Parsing;
+using AgentOps.Core.Analysis;
+using AgentOps.Core.Analysis.Detectors;
 
-// Check if running in CI/non-interactive mode for PR analysis
-bool isCIPRAnalysis   = args.Length >= 4 && args[0] == "analyze-pr";
-bool isValidateAgent  = args.Length >= 2 && args[0] == "validate-agent";
-bool isAnalyzeRemote  = args.Length >= 1 && args[0] == "analyze";
-bool isDashboard      = args.Length >= 1 && args[0] == "dashboard";
+// ── Argument parsing ──────────────────────────────────────────────────────────
+bool isCIMode     = args.Length >= 4 && args[0] == "analyze-pr";
+bool isDirectFile = args.Length >= 2 && args[0] == "analyze";
 
-// Parse optional flags for validate-agent mode
-bool postComment = args.Contains("--post-comment");
-bool externalMode = args.Contains("--external");
-bool interactiveMode = args.Contains("--interactive");
-int prNumberArg = 0;
-string prOwnerArg = string.Empty;
-string prRepoArg = string.Empty;
-string? rulesFileArg = null;
-string? allowedActionsArg = null;
-string? forbiddenActionsArg = null;
-bool? requireOwnerArg = null;
-bool? requireAuditArg = null;
-int? minScoreArg = null;
-int? blockScoreArg = null;
+int    prNumberArg = 0;
+string prOwnerArg  = string.Empty;
+string prRepoArg   = string.Empty;
+string? outputDir  = null;
+bool   postComment = args.Contains("--post-comment");
 
 for (int i = 0; i < args.Length - 1; i++)
 {
-    if (args[i] == "--pr"    && int.TryParse(args[i + 1], out int pn)) prNumberArg = pn;
+    if (args[i] == "--pr"     && int.TryParse(args[i + 1], out int pn)) prNumberArg = pn;
     if (args[i] == "--owner")  prOwnerArg = args[i + 1];
     if (args[i] == "--repo")   prRepoArg  = args[i + 1];
-    if (args[i] == "--rules")  rulesFileArg = args[i + 1];
-    if (args[i] == "--allow")  allowedActionsArg = args[i + 1];
-    if (args[i] == "--forbid") forbiddenActionsArg = args[i + 1];
-    if (args[i] == "--min-score" && int.TryParse(args[i + 1], out int ms)) minScoreArg = ms;
-    if (args[i] == "--block-score" && int.TryParse(args[i + 1], out int bs)) blockScoreArg = bs;
+    if (args[i] == "--output") outputDir  = args[i + 1];
 }
 
-// Check for --require-owner / --no-require-owner
-if (args.Contains("--require-owner")) requireOwnerArg = true;
-if (args.Contains("--no-require-owner")) requireOwnerArg = false;
-
-// Check for --require-audit / --no-require-audit
-if (args.Contains("--require-audit")) requireAuditArg = true;
-if (args.Contains("--no-require-audit")) requireAuditArg = false;
-
+// ── DI Container ─────────────────────────────────────────────────────────────
 var host = Host.CreateDefaultBuilder(args)
-	.ConfigureServices((context, services) =>
-	{
-		// Core governance services
-		services.AddSingleton<IConsoleWriter, ConsoleWriter>();
-		services.AddSingleton<DataPathsOptions>();
-		services.AddSingleton<IClock, SystemClock>();
-		
-		// User rules loader
-		services.AddSingleton<UserRulesLoader>();
-		services.AddSingleton<InteractiveRulesBuilder>();
-		
-		// Agent repositories and handlers
-		services.AddSingleton<IAgentDefinitionRepository>(sp =>
-			new FileAgentDefinitionRepository(sp.GetRequiredService<DataPathsOptions>().AgentDefinitionsPath));
-		services.AddSingleton<IAuditRepository>(sp =>
-			new FileAuditRepository(sp.GetRequiredService<DataPathsOptions>().AuditPath));
-		// Evaluation scenario repository (YAML)
-		services.AddSingleton<AgentOps.Application.UseCases.EvaluateAgentBehavior.IEvaluationScenarioRepository, AgentOps.Infrastructure.Persistence.YamlEvaluationScenarioRepository>();
-		// Evaluation report persistence
-		services.AddSingleton<AgentOps.Application.UseCases.EvaluateAgentBehavior.IEvaluationReportRepository>(sp =>
-			new AgentOps.Infrastructure.Persistence.FileEvaluationReportRepository(sp.GetRequiredService<DataPathsOptions>()));
-		services.AddSingleton<AgentOps.Application.UseCases.EvaluateAgentBehavior.EvaluateAgentBehaviorHandler>(sp =>
-			new AgentOps.Application.UseCases.EvaluateAgentBehavior.EvaluateAgentBehaviorHandler(
-				sp.GetRequiredService<IAgentDefinitionRepository>(),
-				sp.GetRequiredService<AgentOps.Application.UseCases.EvaluateAgentBehavior.IEvaluationScenarioRepository>(),
-				sp.GetRequiredService<IAuditRepository>(),
-				sp.GetRequiredService<AgentOps.Application.UseCases.EvaluateAgentBehavior.IEvaluationReportRepository>(),
-				sp.GetRequiredService<AgentOps.Security.Interfaces.ISecurityAnalyzer>(),
-				sp.GetRequiredService<AgentOps.Application.Interfaces.ICommentPoster>()));
-		services.AddSingleton<AgentOps.CLI.EvaluateAgentBehaviorCommand>();
-		services.AddSingleton<CreateAgentDefinitionHandler>();
-		services.AddSingleton<CreateAgentDefinitionCommand>();
-		services.AddSingleton<ListAgentsCommand>();
-		// Audit trail reader and ViewAuditTrail command
-		services.AddSingleton<IAuditTrailReader>(sp =>
-			new AgentOps.Infrastructure.Persistence.FileAuditTrailReader(
-				sp.GetRequiredService<DataPathsOptions>().AuditPath,
-				sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AgentOps.Infrastructure.Persistence.FileAuditTrailReader>>()));
-		services.AddSingleton<ViewAuditTrailHandler>();
-		services.AddSingleton<ViewAuditTrailCommand>();
-		// Register governance rules and engine
-		services.AddSingleton<IGovernanceRule, AllowedActionsRule>();
-		services.AddSingleton<IGovernanceRule, ForbiddenActionsRule>();
-		services.AddSingleton<IGovernanceRule, AuditLoggingRule>();
-		services.AddSingleton<IGovernanceRule, OwnerDefinedRule>();
-		services.AddSingleton<IGovernanceRule, VersionDefinedRule>();
-		services.AddSingleton<IGovernanceRule, AgentOps.Core.Governance.Rules.RateLimitRule>();
-		services.AddSingleton<IGovernanceRule, AgentOps.Core.Governance.Rules.TimeoutRule>();
-		services.AddSingleton<IGovernanceRule, AgentOps.Core.Governance.Rules.EnvironmentScopeRule>();
-		services.AddSingleton<GovernanceRuleEngine>();
-		// ValidateAgentCommandHandler registered later (after Azure OpenAI options resolved)
-		// Register security rules and analyzer for deterministic checks
-		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.PromptInjectionRule>();
-		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.ToolAbuseRule>();
-		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.SensitiveDataExposureRule>();
-		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.MissingSafetyRule>();
-		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.MissingRetentionPolicyRule>();
-		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.MissingLawfulBasisRule>();
-		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.UnclassifiedDataRule>();
-		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.MissingJustificationRule>();
-		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityRule, AgentOps.Security.Rules.NoComplianceRulesRule>();
-		services.AddSingleton<AgentOps.Security.Interfaces.ISecurityAnalyzer, AgentOps.Security.SecurityAnalyzer>();
-		services.AddSingleton<RunCodeReviewCommand>();
-		services.AddSingleton<RunComplianceCheckCommand>();
-		// GitHub PR Analyzer
-		services.AddSingleton<AgentOps.GitHub.IGitHubPullRequestClient>(sp =>
-			new AgentOps.GitHub.GitHubPullRequestClient(Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? ""));
-		services.AddSingleton<AgentOps.GitHub.GitHubHttpClient>(sp =>
-			new AgentOps.GitHub.GitHubHttpClient(Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? ""));
-		services.AddSingleton<AgentOps.Application.Interfaces.ICommentPoster>(sp =>
-			new AgentOps.Infrastructure.GitHub.GitHubCommentPoster(sp.GetRequiredService<AgentOps.GitHub.GitHubHttpClient>()));
-		services.AddSingleton<AgentOps.CLI.Commands.AnalyzePullRequestCommand>();
-		// Dashboard
-		services.AddScoped<AgentOps.Application.Interfaces.IAgentFetcher>(sp =>
-			new AgentOps.Infrastructure.GitHub.GitHubAgentFetcher(sp.GetRequiredService<AgentOps.GitHub.GitHubHttpClient>()));
-		services.AddScoped<AgentOps.Application.Interfaces.IGovernanceConfigLoader>(sp =>
-			new AgentOps.Infrastructure.Config.GovernanceConfigLoader(sp.GetRequiredService<AgentOps.GitHub.GitHubHttpClient>()));
-		services.AddScoped<GetDashboardQueryHandler>(sp =>
-			new GetDashboardQueryHandler(
-				sp.GetRequiredService<AgentOps.Application.Interfaces.IAgentFetcher>(),
-				sp.GetRequiredService<GovernanceRuleEngine>(),
-				sp.GetRequiredService<AgentOps.Application.Interfaces.IGovernanceConfigLoader>()));
-		services.AddScoped<DashboardRenderer>();
-		
-		// ── Azure OpenAI Governance Semantic Analyzer ────────────────────────
-		var azureOpenAIOptions = new AzureOpenAIOptions();
-		if (azureOpenAIOptions.IsConfigured)
-		{
-			// Register governance semantic analyzer (for validate-agent command)
-			services.AddSingleton<AgentOps.Application.Interfaces.IAgentSemanticAnalyzer>(sp =>
-				new AgentOps.Infrastructure.AzureOpenAI.AzureOpenAIGovernanceClient(
-					azureOpenAIOptions.Endpoint!,
-					azureOpenAIOptions.Key!,
-					azureOpenAIOptions.DeploymentName,
-					sp.GetRequiredService<ILogger<AgentOps.Infrastructure.AzureOpenAI.AzureOpenAIGovernanceClient>>()));
-			// Register legacy LLM client (for PR diff analysis)
-			services.AddSingleton<AgentOps.Application.Interfaces.ILLMClient>(sp =>
-				new AzureOpenAIClient(azureOpenAIOptions.Endpoint, azureOpenAIOptions.Key,
-					sp.GetRequiredService<ILogger<AzureOpenAIClient>>()));
-			services.AddSingleton<AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer>(sp =>
-				new AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer(
-					sp.GetRequiredService<AgentOps.Application.Interfaces.ILLMClient>()));
-		}
-		else
-		{
-			// No Azure credentials — semantic analysis gracefully degraded
-			services.AddSingleton<AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer>(sp =>
-				new AgentOps.Application.UseCases.EvaluateAgentBehavior.Evaluators.SemanticCodeAnalyzer(null));
-			// IAgentSemanticAnalyzer intentionally NOT registered — handler receives null via GetService
-		}
-		// Override ValidateAgentCommandHandler to inject the optional semantic analyzer
-		services.AddSingleton<ValidateAgentCommandHandler>(sp =>
-			new ValidateAgentCommandHandler(
-				sp.GetRequiredService<GovernanceRuleEngine>(),
-				sp.GetService<IAgentSemanticAnalyzer>()));
-		
-		// ── Interactive Agent Analyzer Wizard ──────────────────────────────
-		services.AddScoped<AgentAnalyzerWizard>();
-		
-		// ── Remote Agent Analyzer Command ──────────────────────────────────
-		services.AddScoped<AnalyzeRemoteAgentCommand>();
-	})
-	.ConfigureLogging(logging =>
-	{
-		logging.ClearProviders();
-		logging.AddConsole();
-	})
-	.Build();
+    .ConfigureServices((context, services) =>
+    {
+        services.AddSingleton<IConsoleWriter, ConsoleWriter>();
 
-var console = host.Services.GetRequiredService<IConsoleWriter>();
-var createAgentCmd = host.Services.GetRequiredService<CreateAgentDefinitionCommand>();
-// Seed Code Reviewer agent if missing (persist via CreateAgentDefinitionHandler)
-var agentRepoSvc = host.Services.GetRequiredService<IAgentDefinitionRepository>();
-var createHandler = host.Services.GetRequiredService<CreateAgentDefinitionHandler>();
-var existing = await agentRepoSvc.ListAllAsync();
-if (!existing.Any(a => a.Name == "Code Reviewer"))
+        // Pipeline infrastructure
+        services.AddSingleton<SafeContentExtractor>();
+        services.AddSingleton<ContentNormalizer>();
+        services.AddSingleton<ContextClassifier>();
+        services.AddSingleton<PromptSanitizer>();
+
+        // Register all 6 detection rules
+        services.AddSingleton<IPromptDetector, PromptInjectionRule>();
+        services.AddSingleton<IPromptDetector, ToolAbuseRule>();
+        services.AddSingleton<IPromptDetector, DataExfiltrationRule>();
+        services.AddSingleton<IPromptDetector, HiddenInstructionRule>();
+        services.AddSingleton<IPromptDetector, ObfuscationRule>();
+        services.AddSingleton<IPromptDetector, PythonPromptStringRule>();
+
+        // Register analyzer
+        services.AddSingleton<PromptAnalyzer>();
+
+        // Register CLI commands
+        services.AddSingleton<AnalyzeFileCommand>();
+
+        // GitHub PR support
+        services.AddSingleton<AgentOps.GitHub.IGitHubPullRequestClient>(sp =>
+            new AgentOps.GitHub.GitHubPullRequestClient(
+                Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? ""));
+        services.AddSingleton<AgentOps.GitHub.GitHubHttpClient>(sp =>
+            new AgentOps.GitHub.GitHubHttpClient(
+                Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? ""));
+        services.AddSingleton<ICommentPoster>(sp =>
+            new AgentOps.Infrastructure.GitHub.GitHubCommentPoster(
+                sp.GetRequiredService<AgentOps.GitHub.GitHubHttpClient>()));
+        services.AddSingleton<AnalyzePullRequestCommand>();
+    })
+    .ConfigureLogging(logging =>
+    {
+        logging.ClearProviders();
+        logging.AddConsole();
+        logging.SetMinimumLevel(LogLevel.Warning);
+    })
+    .Build();
+
+// ── Banner ────────────────────────────────────────────────────────────────────
+Console.ForegroundColor = ConsoleColor.Cyan;
+Console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+Console.WriteLine("       AgentOps — Prompt Security Analyzer      ");
+Console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+Console.ResetColor();
+Console.WriteLine();
+
+// ── Mode: CI PR Analysis ──────────────────────────────────────────────────────
+if (isCIMode)
 {
-	var seedReq = new AgentOps.Application.UseCases.CreateAgentDefinition.CreateAgentDefinitionRequest
-	{
-		Name = "Code Reviewer",
-		Description = "Deterministic code-review agent that detects secrets, dangerous APIs and dependency risks.",
-		Purpose = "Review PR diffs for security, quality and compliance.",
-		Rules = new System.Collections.Generic.List<string>
-		{
-			"No approve with vulnerabilities",
-			"No hardcode secrets",
-			"No suggest insecure code",
-			"Explain every finding"
-		},
-		Tools = new System.Collections.Generic.List<string> { "StaticCodeScan", "DependencyCheck", "SecretDetection" },
-		Configuration = new AgentOps.Core.Entities.AgentConfiguration { RequiresAudit = true, AllowHallucination = false }
-	};
-	var resp = await createHandler.HandleAsync(seedReq);
-	if (resp.Status == "Success")
-	{
-		console.WriteLine("Seeded Code Reviewer agent.");
-	}
+    var prCmd = host.Services.GetRequiredService<AnalyzePullRequestCommand>();
+    if (int.TryParse(args[3], out int prNum))
+    {
+        var code = await prCmd.ExecuteAsync(args[1], args[2], prNum);
+        Environment.ExitCode = code;
+    }
+    else
+    {
+        Console.WriteLine("❌ Invalid PR number");
+        Environment.ExitCode = 1;
+    }
+    return;
 }
 
-// Seed Compliance Checker agent if missing
-if (!existing.Any(a => a.Name == "Compliance Checker"))
+// ── Mode: Direct file analysis ────────────────────────────────────────────────
+if (isDirectFile)
 {
-	var seedReq = new AgentOps.Application.UseCases.CreateAgentDefinition.CreateAgentDefinitionRequest
-	{
-		Name = "Compliance Checker",
-		Description = "Governed compliance checker for GDPR-like and internal policies.",
-		Purpose = "Verificar cumplimiento normativo y políticas internas",
-		Rules = new System.Collections.Generic.List<string>
-		{
-			"No permitir almacenamiento de PII sin base legal",
-			"Exigir políticas de retención de datos",
-			"Exigir trazabilidad y justificación",
-			"Bloquear definiciones sin reglas de compliance explícitas"
-		},
-		Tools = new System.Collections.Generic.List<string> { "PolicyChecklist", "DataClassification", "RetentionValidation" },
-		Configuration = new AgentOps.Core.Entities.AgentConfiguration { RequiresAudit = true, AllowHallucination = false }
-	};
-	var resp2 = await createHandler.HandleAsync(seedReq);
-	if (resp2.Status == "Success")
-	{
-		console.WriteLine("Seeded Compliance Checker agent.");
-	}
+    var filePath = args[1];
+    var fileCmd = host.Services.GetRequiredService<AnalyzeFileCommand>();
+    var code = await fileCmd.ExecuteAsync(filePath, postComment, prNumberArg, prOwnerArg, prRepoArg, outputDir);
+    Environment.ExitCode = code;
+    return;
 }
 
-// Display governance console
-console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-console.WriteLine("     AgentOps Governance Console [MVP]     ");
-console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-console.WriteLine("");
+// ── Mode: Interactive Menu ────────────────────────────────────────────────────
+var analyzeCmd = host.Services.GetRequiredService<AnalyzeFileCommand>();
 
-// If running in CI mode for PR analysis, bypass interactive menu
-if (isCIPRAnalysis && args.Length >= 4)
+while (true)
 {
-	var analyzePRCmd = host.Services.GetRequiredService<AgentOps.CLI.Commands.AnalyzePullRequestCommand>();
-	try
-	{
-		if (int.TryParse(args[3], out int prNumber))
-		{
-			await analyzePRCmd.ExecuteAsync(args[1], args[2], prNumber);
-		}
-		else
-		{
-			console.WriteLine("❌ Invalid PR number provided");
-		}
-	}
-	catch (Exception ex)
-	{
-		console.WriteLine($"❌ Error during PR analysis: {ex.Message}");
-	}
-}
-else if (isAnalyzeRemote)
-{
-	// Interactive remote agent analyzer
-	// Usage: dotnet run -- analyze
-	try
-	{
-		var cmd = host.Services.GetRequiredService<AnalyzeRemoteAgentCommand>();
-		var exitCode = await cmd.ExecuteInteractiveAsync();
-		Environment.ExitCode = exitCode;
-	}
-	catch (Exception ex)
-	{
-		console.WriteLine($"❌ Error: {ex.Message}");
-		Environment.ExitCode = 1;
-	}
-}
-else if (isValidateAgent && args.Length >= 2)
-{
-	var handler = host.Services.GetRequiredService<ValidateAgentCommandHandler>();
-	var rulesLoader = host.Services.GetRequiredService<UserRulesLoader>();
-	var rulesBuilder = host.Services.GetRequiredService<InteractiveRulesBuilder>();
-	
-	try
-	{
-		var command = new ValidateAgentCommand(args[1]);
+    Console.WriteLine("╔══════════════════════════════════════════╗");
+    Console.WriteLine("║       AgentOps — Prompt Analyzer         ║");
+    Console.WriteLine("╠══════════════════════════════════════════╣");
+    Console.WriteLine("║  1) 🔍 Analizar un archivo               ║");
+    Console.WriteLine("║  2) 📊 Ver último reporte                ║");
+    Console.WriteLine("║  3) 🚪 Salir                             ║");
+    Console.WriteLine("╚══════════════════════════════════════════╝");
+    Console.Write("\nElige una opción (1-3): ");
 
-		// Load local governance config (reads data/governance-config.yaml if present)
-		var localConfig = LocalGovernanceConfigReader.TryLoad();
+    var choice = Console.ReadLine()?.Trim();
 
-		// ── Load user rules (with precedence order) ────────────────────────
-		UserRules userRules;
-		
-		// 1. Interactive mode (highest priority)
-		if (interactiveMode)
-		{
-			userRules = await rulesBuilder.BuildInteractiveAsync();
-		}
-		// 2. File-based rules (--rules flag)
-		else if (!string.IsNullOrEmpty(rulesFileArg))
-		{
-			try
-			{
-				var rulesFromFile = await rulesLoader.LoadFromFileAsync(rulesFileArg);
-				var rulesFromFlags = rulesLoader.LoadFromFlags(allowedActionsArg, forbiddenActionsArg, requireOwnerArg, requireAuditArg, minScoreArg, blockScoreArg);
-				userRules = rulesLoader.Merge(rulesFromFile, rulesFromFlags);
-			}
-			catch (Exception ex)
-			{
-				console.WriteError($"❌ Error loading rules file: {ex.Message}");
-				Environment.ExitCode = 1;
-				return;
-			}
-		}
-		// 3. CLI flags (--allow, --forbid, etc.)
-		else if (!string.IsNullOrEmpty(allowedActionsArg) || 
-		         !string.IsNullOrEmpty(forbiddenActionsArg) || 
-		         requireOwnerArg.HasValue || 
-		         requireAuditArg.HasValue || 
-		         minScoreArg.HasValue || 
-		         blockScoreArg.HasValue)
-		{
-			userRules = rulesLoader.LoadFromFlags(allowedActionsArg, forbiddenActionsArg, requireOwnerArg, requireAuditArg, minScoreArg, blockScoreArg);
-		}
-		// 4. Defaults (no flags provided)
-		else
-		{
-			userRules = rulesLoader.GetDefaults();
-		}
+    if (choice == "3" || choice == "q" || choice == "exit")
+        break;
 
-		// Convert user rules to governance config (overrides local config)
-		var governanceConfig = userRules.ToGovernanceConfig();
-		if (localConfig != null)
-		{
-			// Merge: use user rules but keep repo-specific settings from localConfig
-			governanceConfig.Repo = localConfig.Repo;
-			if (localConfig.Environments.Count > 0)
-				governanceConfig.Environments = localConfig.Environments;
-			// Also inherit semantic analysis config from local config
-			governanceConfig.SemanticAnalysis = localConfig.SemanticAnalysis;
-		}
+    if (choice == "1")
+    {
+        Console.WriteLine();
+        Console.WriteLine("¿Ruta del archivo a analizar?");
+        Console.WriteLine("(Markdown .md o Python .py)");
+        Console.Write("→ ");
+        var filePath = Console.ReadLine()?.Trim();
 
-		// When --external is set, load the mapping context before running governance
-		AgentMappingContext? externalContext = null;
-		if (externalMode)
-		{
-			try
-			{
-				var (_, ctx) = await AgentDefinitionLoader.LoadWithContextAsync(args[1]);
-				externalContext = ctx;
-			}
-			catch { /* context is optional — don't fail if it errors */ }
-		}
+        if (string.IsNullOrEmpty(filePath))
+        {
+            Console.WriteLine("❌ Ruta vacía.\n");
+            continue;
+        }
 
-		var report = await handler.HandleAsync(command, governanceConfig);
-		DisplayGovernanceReport(report, console);
+        await analyzeCmd.ExecuteAsync(filePath, outputDir: "outputs");
 
-		// Display external format analysis when --external flag was set
-		if (externalMode && externalContext != null)
-			DisplayExternalAnalysis(externalContext, console);
+        Console.WriteLine("\n¿Qué quieres hacer?");
+        Console.WriteLine("  1) Analizar otro archivo");
+        Console.WriteLine("  2) Volver al menú");
+        Console.Write("→ ");
+        var next = Console.ReadLine()?.Trim();
+        if (next != "1")
+            continue;
+    }
+    else if (choice == "2")
+    {
+        var reports = Directory.GetFiles("outputs", "analysis-*.json", SearchOption.TopDirectoryOnly)
+            .OrderByDescending(f => f)
+            .ToArray();
 
-		// Post PR comment when --post-comment flag is present
-		if (postComment && prNumberArg > 0 && !string.IsNullOrEmpty(prOwnerArg) && !string.IsNullOrEmpty(prRepoArg))
-		{
-			try
-			{
-				var commentPoster = host.Services.GetRequiredService<AgentOps.Application.Interfaces.ICommentPoster>();
-				await commentPoster.PostGovernanceReportAsync(prOwnerArg, prRepoArg, prNumberArg, report);
-				console.WriteLine($"✅ Governance report posted to PR #{prNumberArg} ({prOwnerArg}/{prRepoArg})");
-			}
-			catch (Exception ex)
-			{
-				// Graceful fallback — don't fail the CI step if comment posting fails
-				console.WriteLine($"[WARN] Could not post PR comment: {ex.Message}");
-			}
-		}
-
-		// CI enforcement: exit 1 so GitHub Actions marks the check as failed
-		if (report.FinalStatus == "BLOCKED")
-			Environment.ExitCode = 1;
-	}
-	catch (Exception ex)
-	{
-		console.WriteLine($"❌ Error validating agent: {ex.Message}");
-		Environment.ExitCode = 1;
-	}
-}
-else if (isDashboard)
-{
-	// Resolve owner/repo: --owner / --repo flags OR defaults to cesarvida/agentops-console
-	string dashOwner = !string.IsNullOrEmpty(prOwnerArg) ? prOwnerArg : "cesarvida";
-	string dashRepo  = !string.IsNullOrEmpty(prRepoArg)  ? prRepoArg  : "agentops-console";
-
-	var dashboardHandler  = host.Services.GetRequiredService<GetDashboardQueryHandler>();
-	var dashboardRenderer = host.Services.GetRequiredService<DashboardRenderer>();
-
-	try
-	{
-		var query  = new GetDashboardQuery(dashOwner, dashRepo);
-		var result = await dashboardHandler.HandleAsync(query);
-		dashboardRenderer.Render(result);
-	}
-	catch (Exception ex)
-	{
-		console.WriteLine($"❌ Error loading dashboard: {ex.Message}");
-	}
-}
-else
-{
-	// Interactive menu mode
-	console.WriteLine("🔍 Analizar un agente");
-	console.WriteLine("1) Create New Agent Definition");
-	console.WriteLine("2) List Agent Definitions");
-	console.WriteLine("3) Exit");
-	console.WriteLine("4) Evaluate Agent Behavior");
-	console.WriteLine("5) View Audit Trail");
-	console.WriteLine("6) Run Code Review (simulated)");
-	console.WriteLine("7) Run Compliance Check (simulated)");
-	console.WriteLine("8) Analyze GitHub PR (real PR from GitHub)");
-	console.WriteLine("9) Validate Agent Governance (YAML)");
-	console.WriteLine("10) 📊 Dashboard de agentes");
-	console.WriteLine("");
-	console.WriteLine("Select option (or 0 for Agent Analyzer): ");
-	var opt = Console.ReadLine();
-
-	if (opt == "0")
-	{
-		var wizard = host.Services.GetRequiredService<AgentAnalyzerWizard>();
-		await wizard.RunAsync();
-	}
-	else if (opt == "1")
-	{
-		await createAgentCmd.ExecuteAsync();
-	}
-	else if (opt == "4")
-	{
-		var evalCmd = host.Services.GetRequiredService<EvaluateAgentBehaviorCommand>();
-		await evalCmd.ExecuteAsync();
-	}
-	else if (opt == "2")
-	{
-		var listCmd = host.Services.GetRequiredService<ListAgentsCommand>();
-		await listCmd.ExecuteAsync();
-	}
-	else if (opt == "5")
-	{
-		var auditCmd = host.Services.GetRequiredService<ViewAuditTrailCommand>();
-		await auditCmd.ExecuteAsync();
-	}
-	else if (opt == "6")
-	{
-		var runCmd = host.Services.GetRequiredService<RunCodeReviewCommand>();
-		await runCmd.ExecuteAsync();
-	}
-	else if (opt == "7")
-	{
-	    var runCmd = host.Services.GetRequiredService<RunComplianceCheckCommand>();
-	    await runCmd.ExecuteAsync();
-	}
-	else if (opt == "8")
-	{
-		var analyzePRCmd = host.Services.GetRequiredService<AgentOps.CLI.Commands.AnalyzePullRequestCommand>();
-		// Read owner, repo, and PR number from stdin
-		var owner = Console.ReadLine() ?? "";
-		var repo = Console.ReadLine() ?? "";
-		var prNumberStr = Console.ReadLine() ?? "";
-		if (int.TryParse(prNumberStr, out var prNumber))
-		{
-			await analyzePRCmd.ExecuteAsync(owner, repo, prNumber);
-		}
-		else
-		{
-			await analyzePRCmd.ExecuteAsync();
-		}
-	}
-	else if (opt == "9")
-	{
-		console.WriteLine("Enter path to agent YAML file: ");
-		var yamlPath = Console.ReadLine() ?? "";
-		if (!string.IsNullOrWhiteSpace(yamlPath))
-		{
-			try
-			{
-				var handler = host.Services.GetRequiredService<ValidateAgentCommandHandler>();
-				var command = new ValidateAgentCommand(yamlPath);
-				var report = await handler.HandleAsync(command);
-				
-				// Display report in console
-				DisplayGovernanceReport(report, console);
-			}
-			catch (Exception ex)
-			{
-				console.WriteLine($"❌ Error validating agent: {ex.Message}");
-			}
-		}
-	}
-	else if (opt == "10")
-	{
-		console.WriteLine("Owner del repo (Enter para cesarvida): ");
-		var dashOwner = Console.ReadLine()?.Trim() ?? "";
-		if (string.IsNullOrEmpty(dashOwner)) dashOwner = "cesarvida";
-
-		console.WriteLine("Nombre del repo (Enter para agentops-console): ");
-		var dashRepo = Console.ReadLine()?.Trim() ?? "";
-		if (string.IsNullOrEmpty(dashRepo)) dashRepo = "agentops-console";
-
-		try
-		{
-			var dashboardHandler  = host.Services.GetRequiredService<GetDashboardQueryHandler>();
-			var dashboardRenderer = host.Services.GetRequiredService<DashboardRenderer>();
-			var query  = new GetDashboardQuery(dashOwner, dashRepo);
-			var result = await dashboardHandler.HandleAsync(query);
-			dashboardRenderer.Render(result);
-		}
-		catch (Exception ex)
-		{
-			console.WriteLine($"❌ Error loading dashboard: {ex.Message}");
-		}
-	}
-	else
-	{
-		console.WriteLine("Exiting AgentOps Console. Goodbye.");
-	}
+        if (reports.Length == 0)
+        {
+            Console.WriteLine("\n📭 No hay reportes guardados aún.\n");
+        }
+        else
+        {
+            Console.WriteLine($"\n📄 Último reporte: {reports[0]}\n");
+            var content = await File.ReadAllTextAsync(reports[0]);
+            Console.WriteLine(content[..Math.Min(500, content.Length)]);
+            Console.WriteLine();
+        }
+    }
+    else
+    {
+        Console.WriteLine("❌ Opción no válida.\n");
+    }
 }
 
-// Ensure required data directory exists
-var paths = host.Services.GetRequiredService<DataPathsOptions>();
-System.IO.Directory.CreateDirectory(paths.AgentDefinitionsPath);
-System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(paths.AuditPath) ?? ".");
-System.IO.Directory.CreateDirectory(paths.EvaluationsPath);
-
-await host.StopAsync();
-
-// Display governance report in console
-void DisplayGovernanceReport(AgentOps.Core.Governance.GovernanceReport report, IConsoleWriter console)
-{
-	string statusEmoji = report.FinalStatus switch
-	{
-		"APPROVED" => "✅",
-		"REVIEW"   => "⚠️",
-		"BLOCKED"  => "❌",
-		_          => "❓"
-	};
-
-	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-	console.WriteLine("   Governance Validation Report");
-	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-	console.WriteLine($"Agent: {report.AgentName} v{report.AgentVersion}");
-	console.WriteLine($"Status: {report.FinalStatus} {statusEmoji}");
-	console.WriteLine($"Governance Score: {report.GovernanceScore}/100");
-	console.WriteLine($"Critical Violations: {report.CriticalViolations}");
-	console.WriteLine($"Warnings: {report.WarningViolations}");
-	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-
-	if (report.RuleResults.Any(r => !r.IsCompliant))
-	{
-		console.WriteLine("Violations:");
-		foreach (var rule in report.RuleResults.Where(r => !r.IsCompliant))
-		{
-			string icon = rule.Severity switch
-			{
-				AgentOps.Core.Governance.RuleSeverity.Critical => "🔴",
-				AgentOps.Core.Governance.RuleSeverity.Warning  => "🟡",
-				_                                              => "ℹ️"
-			};
-			console.WriteLine($"\n{icon} {rule.RuleName} ({rule.Severity})");
-			foreach (var violation in rule.Violations)
-				console.WriteLine($"  - {violation}");
-		}
-	}
-	else
-	{
-		console.WriteLine("✅ Agent passed all governance rules!");
-	}
-
-	// ── Semantic analysis section ─────────────────────────────────────────
-	console.WriteLine("");
-	console.WriteLine("🧠 Semantic Analysis:");
-	var semantic = report.SemanticAnalysis;
-	if (semantic == null || !semantic.IsAvailable)
-	{
-		console.WriteLine("   Status: Skipped");
-		if (semantic != null && !string.IsNullOrEmpty(semantic.ErrorMessage))
-			console.WriteLine($"   Reason: {semantic.ErrorMessage}");
-	}
-	else
-	{
-		string riskEmoji = semantic.RiskLevel switch
-		{
-			"HIGH"   => "🔴",
-			"MEDIUM" => "🟡",
-			_        => "🟢"
-		};
-		console.WriteLine("   Status: Available");
-		console.WriteLine($"   Risk Level: {riskEmoji} {semantic.RiskLevel}");
-
-		if (semantic.Issues.Count > 0)
-		{
-			console.WriteLine("   Issues:");
-			foreach (var issue in semantic.Issues)
-				console.WriteLine($"     - {issue}");
-		}
-		if (semantic.Recommendations.Count > 0)
-		{
-			console.WriteLine("   Recommendations:");
-			foreach (var rec in semantic.Recommendations)
-				console.WriteLine($"     - {rec}");
-		}
-	}
-
-	console.WriteLine("");
-}
-
-// Display external format analysis section
-void DisplayExternalAnalysis(AgentMappingContext ctx, IConsoleWriter console)
-{
-	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-	console.WriteLine("   📋 Análisis de Formato Externo");
-	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-	console.WriteLine($"Formato detectado:   {ctx.DetectedFormat}");
-	console.WriteLine($"Modo:                {(ctx.UsedFlexibleMapper ? "Flexible mapper (formato externo)" : "Parser estricto (formato nativo)")}");
-
-	int recognized = ctx.RecognizedFieldCount;
-	int total      = ctx.RecognizedFields.Count + ctx.UnrecognizedFields.Count;
-	console.WriteLine($"Campos reconocidos:  {string.Join(", ", ctx.RecognizedFields)} ({recognized}/{total})");
-
-	if (ctx.UnrecognizedFields.Count > 0)
-		console.WriteLine($"Campos no reconocidos: {string.Join(", ", ctx.UnrecognizedFields)}");
-
-	if (ctx.MappingNotes.Count > 0)
-	{
-		console.WriteLine("Mapeo aplicado:");
-		foreach (var note in ctx.MappingNotes)
-			console.WriteLine($"  - {note}");
-	}
-
-	if (ctx.UsedFlexibleMapper)
-		console.WriteLine(
-			"\nNota: Este agente usa un formato externo. " +
-			"Los campos mapeados pueden no reflejar el 100% de la intención original.");
-
-	console.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-	console.WriteLine("");
-}
-
-// SystemClock implementation
-public class SystemClock : IClock
-{
-	public DateTime UtcNow => DateTime.UtcNow;
-}
+Console.WriteLine("\n👋 Hasta luego!");
