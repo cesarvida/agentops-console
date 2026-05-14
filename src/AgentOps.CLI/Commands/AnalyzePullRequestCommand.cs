@@ -46,7 +46,6 @@ public sealed class AnalyzePullRequestCommand
         var evaluationDir = "data/evaluations";
         Directory.CreateDirectory(evaluationDir);
 
-        int maxExitCode = 0;
         foreach (var filePath in relevantFiles)
         {
             if (!File.Exists(filePath)) 
@@ -63,12 +62,10 @@ public sealed class AnalyzePullRequestCommand
             var evaluationPath = Path.Combine(evaluationDir, $"evaluation_{fileName}_{DateTime.UtcNow:yyyyMMddHHmmss}.json");
             await File.WriteAllTextAsync(evaluationPath, report.ToAuditJson());
             Console.WriteLine($"  📄 Saved to {evaluationPath}");
-            
-            if (report.Decision == "BLOCK") 
-                maxExitCode = 1;
         }
         
         Console.WriteLine();
-        return maxExitCode;
+        // Always return 0 - workflow comment job handles decision making
+        return 0;
     }
 }
