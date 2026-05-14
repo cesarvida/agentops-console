@@ -37,7 +37,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          dotnet run --project src/AgentOps.CLI/AgentOps.CLI.csproj -- analyze-pr ${{ github.repository_owner }} ${{ github.event.repository.name }} ${{ github.event.pull_request.number }}
+          dotnet run --project src/AgentOps.CLI/AgentOps.CLI.csproj -c Release -- analyze-pr ${{ github.repository_owner }} ${{ github.event.repository.name }} ${{ github.event.pull_request.number }}
 
       - name: Upload evaluation artifacts
         if: always()
@@ -53,13 +53,18 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
-      issues: write
       contents: read
+      actions: read
     steps:
       - name: Checkout base repository
         uses: actions/checkout@v4
         with:
           ref: ${{ github.base_ref }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.0.x'
 
       - name: Download evaluation artifacts
         uses: actions/download-artifact@v4
@@ -67,36 +72,101 @@ jobs:
           name: evaluation-reports
           path: data/evaluations/
 
-      - name: Publish findings as PR comment
+      - name: Find latest evaluation report
+        id: find_report
+        run: |
+          # Find the most recent evaluation report
+          REPORT=$(find data/evaluations -name "evaluation_*.json" -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+          if [ -z "$REPORT" ]; then
+            echo "report_path=" >> $GITHUB_OUTPUT
+          else
+            echo "report_path=$REPORT" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Render PR comment from report
+        if: steps.find_report.outputs.report_path != ''
+        run: |
+          dotnet run --project src/AgentOps.CLI/AgentOps.CLI.csproj -c Release -- render-pr-comment \
+            --report "${{ steps.find_report.outputs.report_path }}" \
+            --out agentops-comment.md
+
+      - name: Find or create PR comment
+        if: steps.find_report.outputs.report_path != ''
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const path = 'data/evaluations';
-            let body = '';
+            const marker = '<!-- agentops-pr-analysis -->';
             
-            if (!fs.existsSync(path)) {
-              body = 'AgentOps: No evaluation report generated for this PR.';
-            } else {
-              const files = fs.readdirSync(path).filter(f => f.startsWith('evaluation_')).sort((a,b) => {
-                return fs.statSync(path + '/' + b).mtime - fs.statSync(path + '/' + a).mtime;
-              });
-              if (files.length === 0) {
-                body = 'AgentOps: No evaluation report generated for this PR.';
-              } else {
-                const latest = path + '/' + files[0];
-                const report = JSON.parse(fs.readFileSync(latest, 'utf8'));
-                const scores = `Security: ${report.Metrics?.SecurityScore ?? 'N/A'} | Compliance: ${report.Metrics?.ComplianceScore ?? 'N/A'} | Consistency: ${report.Metrics?.ConsistencyScore ?? 'N/A'} | Combined: ${report.Metrics?.CombinedQualityScore ?? 'N/A'}`;
-                const findings = (report.Findings || []).map(f => `- [${f.Severity}] ${f.Summary}`).join('\n') || 'No findings.';
-                body = `## AgentOps PR Analysis\n\n**Scores:** ${scores}\n\n**Findings:**\n${findings}\n\n_This comment was posted by the AgentOps automated analyzer._`;
-              }
-            }
+            // Read the rendered comment
+            const body = fs.readFileSync('agentops-comment.md', 'utf-8');
             
-            await github.rest.issues.createComment({
+            // Get existing comments
+            const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body
+              issue_number: context.issue.number
             });
+            
+            // Find existing AgentOps comment
+            const existingComment = comments.data.find(comment => 
+              comment.body.includes(marker)
+            );
+            
+            if (existingComment) {
+              // Update existing comment
+              console.log(`Updating existing comment #${existingComment.id}`);
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: body
+              });
+            } else {
+              // Create new comment
+              console.log('Creating new AgentOps comment');
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+      - name: No evaluation report found
+        if: steps.find_report.outputs.report_path == ''
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const marker = '<!-- agentops-pr-analysis -->';
+            const body = `${marker}\n\n## 🔍 AgentOps PR Analysis\n\nNo evaluation report was generated for this PR. This may occur if:\n- No .md or .py files were changed\n- The analysis job did not complete successfully\n\nPlease check the build logs for details.`;
+            
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            const existingComment = comments.data.find(comment => 
+              comment.body.includes(marker)
+            );
+            
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
 

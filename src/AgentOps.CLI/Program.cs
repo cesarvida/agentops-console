@@ -10,14 +10,17 @@ using AgentOps.Core.Analysis;
 using AgentOps.Core.Analysis.Detectors;
 
 // ── Argument parsing ──────────────────────────────────────────────────────────
-bool isCIMode     = args.Length >= 4 && args[0] == "analyze-pr";
-bool isDirectFile = args.Length >= 2 && args[0] == "analyze";
+bool isCIMode          = args.Length >= 4 && args[0] == "analyze-pr";
+bool isDirectFile      = args.Length >= 2 && args[0] == "analyze";
+bool isRenderComment   = args.Length >= 2 && args[0] == "render-pr-comment";
 
 int    prNumberArg = 0;
 string prOwnerArg  = string.Empty;
 string prRepoArg   = string.Empty;
 string? outputDir  = null;
 bool   postComment = args.Contains("--post-comment");
+string? reportPath = null;
+string? commentOutput = null;
 
 for (int i = 0; i < args.Length - 1; i++)
 {
@@ -25,6 +28,8 @@ for (int i = 0; i < args.Length - 1; i++)
     if (args[i] == "--owner")  prOwnerArg = args[i + 1];
     if (args[i] == "--repo")   prRepoArg  = args[i + 1];
     if (args[i] == "--output") outputDir  = args[i + 1];
+    if (args[i] == "--report") reportPath = args[i + 1];
+    if (args[i] == "--out")    commentOutput = args[i + 1];
 }
 
 // ── DI Container ─────────────────────────────────────────────────────────────
@@ -52,6 +57,7 @@ var host = Host.CreateDefaultBuilder(args)
 
         // Register CLI commands
         services.AddSingleton<AnalyzeFileCommand>();
+        services.AddSingleton<RenderPRCommentCommand>();
 
         // GitHub PR support
         services.AddSingleton<AgentOps.GitHub.IGitHubPullRequestClient>(sp =>
@@ -95,6 +101,15 @@ if (isCIMode)
         Console.WriteLine("❌ Invalid PR number");
         Environment.ExitCode = 1;
     }
+    return;
+}
+
+// ── Mode: Render PR Comment ────────────────────────────────────────────────────
+if (isRenderComment)
+{
+    var renderCmd = host.Services.GetRequiredService<RenderPRCommentCommand>();
+    var code = await renderCmd.ExecuteAsync(reportPath ?? "", commentOutput);
+    Environment.ExitCode = code;
     return;
 }
 
