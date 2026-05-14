@@ -3,21 +3,18 @@ name: PR Analysis
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  pull_request_target:
-    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
 
 jobs:
   analyze:
-    # Run on pull_request event (no write token needed for analysis)
-    if: github.event_name == 'pull_request'
+    # Analyze PR code with minimal permissions
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - name: Checkout repository
+      - name: Checkout PR head commit
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -48,25 +45,25 @@ jobs:
           retention-days: 5
 
   comment:
-    # Run on pull_request_target event (has write token for PR comments)
-    if: github.event_name == 'pull_request_target'
+    # Post/update PR comment with findings (shared workflow, separate permissions)
+    needs: analyze
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
       contents: read
       actions: read
     steps:
-      - name: Checkout base repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.base_ref }}
-
-      - name: Setup .NET
+      - name: Setup .NET (for CLI)
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '10.0.x'
 
-      - name: Download evaluation artifacts
+      - name: Checkout main for CLI (not PR branch)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Download evaluation artifacts from analyze job
         uses: actions/download-artifact@v4
         with:
           name: evaluation-reports
