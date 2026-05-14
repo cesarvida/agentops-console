@@ -46,12 +46,23 @@ public sealed class AnalyzePullRequestCommand
         foreach (var f in relevantFiles) Console.WriteLine($"  - {f}");
         Console.WriteLine();
 
+        // Create evaluation output directory
+        var evaluationDir = "data/evaluations";
+        Directory.CreateDirectory(evaluationDir);
+
         int maxExitCode = 0;
         foreach (var filePath in relevantFiles)
         {
             if (!File.Exists(filePath)) { Console.WriteLine($"Skipping {filePath} (not found locally)"); continue; }
             var report = await _analyzer.AnalyzeAsync(filePath);
             Console.WriteLine($"{report.FileName}  ->  {report.Decision}  ({report.RiskScore}/100)");
+            
+            // Save evaluation report to data/evaluations/
+            var fileName = Path.GetFileNameWithoutExtension(filePath);
+            var evaluationPath = Path.Combine(evaluationDir, $"evaluation_{fileName}_{DateTime.UtcNow:yyyyMMddHHmmss}.json");
+            await File.WriteAllTextAsync(evaluationPath, report.ToAuditJson());
+            Console.WriteLine($"  📄 Saved to {evaluationPath}");
+            
             try { await _commentPoster.PostPromptAnalysisAsync(owner, repo, prNumber, report); }
             catch (Exception ex) { _logger.LogWarning("Failed to post comment: {Message}", ex.Message); }
             if (report.Decision == "BLOCK") maxExitCode = 1;
