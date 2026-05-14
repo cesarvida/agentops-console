@@ -1,27 +1,17 @@
 name: PR Analysis
-
 on:
   pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-
-permissions:
-  contents: read
-
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-      - name: Setup .NET
+      - name: Setup dotnet
         uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: 10.0.x
 
       - name: Restore
         run: dotnet restore AgentOps.Console.sln
@@ -29,17 +19,14 @@ jobs:
       - name: Build
         run: dotnet build AgentOps.Console.sln -c Release --no-restore
 
-      - name: Analyze PR
-        run: |
-          dotnet run --project src/AgentOps.CLI -c Release -- analyze-pr ${{ github.repository_owner }} ${{ github.event.repository.name }} ${{ github.event.pull_request.number }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Analyze
+        run: dotnet run --project src/AgentOps.CLI -c Release -- analyze-pr ${{ github.repository_owner }} ${{ github.event.repository.name }} ${{ github.event.pull_request.number }}
 
-      - name: Upload artifacts
+      - name: Upload
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: evaluation-reports
+          name: reports
           path: data/evaluations/
           retention-days: 5
 
@@ -48,68 +35,41 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
-      contents: read
-      actions: read
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: main
+      - name: Checkout
+        uses: actions/checkout@v2
 
-      - name: Setup .NET
+      - name: Setup dotnet
         uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: 10.0.x
 
-      - name: Download artifacts
+      - name: Download
         uses: actions/download-artifact@v2
         with:
-          name: evaluation-reports
+          name: reports
           path: data/evaluations/
 
       - name: Find report
         id: report
-        run: |
-          REPORT=$(find data/evaluations -name "evaluation_*.json" -type f | head -1)
-          if [ -z "$REPORT" ]; then
-            echo "path=" >> $GITHUB_OUTPUT
-          else
-            echo "path=$REPORT" >> $GITHUB_OUTPUT
-          fi
+        run: echo "path=$(find data/evaluations -name 'evaluation_*.json' -type f | head -1)" >> $GITHUB_OUTPUT
 
-      - name: Render comment
+      - name: Render
         if: steps.report.outputs.path != ''
-        run: |
-          dotnet run --project src/AgentOps.CLI -c Release -- render-pr-comment --report "${{ steps.report.outputs.path }}" --out agentops-comment.md
+        run: dotnet run --project src/AgentOps.CLI -c Release -- render-pr-comment --report ${{ steps.report.outputs.path }} --out agentops-comment.md
 
-      - name: Post comment
+      - name: Comment
         if: steps.report.outputs.path != ''
         uses: actions/github-script@v6
         with:
           script: |
             const fs = require('fs');
-            const marker = '<!-- agentops-pr-analysis -->';
             const body = fs.readFileSync('agentops-comment.md', 'utf-8');
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number
-            });
-            const existing = comments.data.find(c => c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body: body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: body
-              });
-            }
+            const comments = await github.rest.issues.listComments({owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number});
+            const existing = comments.data.find(c => c.body.includes('<!-- agentops-pr-analysis -->'));
+            if (existing) {await github.rest.issues.updateComment({owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body: body});}
+            else {await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: body});}
+
 
 
 
