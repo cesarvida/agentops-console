@@ -20,6 +20,8 @@ jobs:
         run: dotnet build AgentOps.Console.sln -c Release --no-restore
 
       - name: Analyze
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: dotnet run --project src/AgentOps.CLI -c Release -- analyze-pr ${{ github.repository_owner }} ${{ github.event.repository.name }} ${{ github.event.pull_request.number }}
 
       - name: Upload
